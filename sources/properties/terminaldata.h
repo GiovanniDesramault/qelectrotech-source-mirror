@@ -50,6 +50,13 @@ class TerminalData : public PropertiesInterface
 		};
 		Q_ENUM(Type)
 
+		/// Direction of the signal a terminal carries (none declared)
+		enum class Signal {
+			None,
+			Out,
+			In
+		};
+
 		TerminalData();
 		TerminalData(QGraphicsObject* parent);
 		~TerminalData() override;
@@ -115,6 +122,22 @@ class TerminalData : public PropertiesInterface
 			other. Empty by default.
 		*/
 		QString m_potential;
+
+		/**
+			@brief m_potential_type_default
+			Optional default cable (potential) type of a wire
+			connected to this terminal, declared by the symbol
+			author (XML attribute potential_type). Empty by default.
+		*/
+		QString m_potential_type_default;
+
+		/**
+			@brief m_signal
+			Optional signal direction of this terminal, declared by
+			the symbol author (XML attribute signal = out | in).
+			None by default.
+		*/
+		Signal m_signal = Signal::None;
 
 		/**
 			@brief m_pos

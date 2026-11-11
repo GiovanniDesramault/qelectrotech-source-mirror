@@ -2321,6 +2321,9 @@ qet_add_app_test(tst_potentialtypes tst_potentialtypes.cpp)
 # numbers, more than one number), as QElectroTech groups the wires.
 qet_add_app_test(tst_potentialview tst_potentialview.cpp)
 
+# A symbol terminal can declare a default cable type and a signal direction.
+qet_add_app_test(tst_terminalcabledefaults tst_terminalcabledefaults.cpp)
+
 # A core of a cable: section, colour and type are locked in the dialog and
 # show a small sign saying why, so an edit cannot write over the cable
 qet_add_app_test(tst_cablelockedfields tst_cablelockedfields.cpp)

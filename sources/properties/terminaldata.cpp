@@ -132,6 +132,15 @@ QDomElement TerminalData::toXml(QDomDocument &xml_document) const
 	if (!m_potential.isEmpty())
 		xml_element.setAttribute("potential", m_potential);
 
+	if (!m_potential_type_default.isEmpty())
+		xml_element.setAttribute("potential_type",
+					 m_potential_type_default);
+
+	if (m_signal == Signal::Out)
+		xml_element.setAttribute("signal", "out");
+	else if (m_signal == Signal::In)
+		xml_element.setAttribute("signal", "in");
+
 	// Save master label override settings
 	if (m_use_master_label) {
 		xml_element.setAttribute("use_master_label", "true");
@@ -211,6 +220,15 @@ bool TerminalData::fromXml (const QDomElement &xml_element)
 	}
 
 	m_potential = xml_element.attribute("potential");
+	m_potential_type_default = xml_element.attribute("potential_type");
+
+	const QString signal = xml_element.attribute("signal");
+	if (signal == QLatin1String("out"))
+		m_signal = Signal::Out;
+	else if (signal == QLatin1String("in"))
+		m_signal = Signal::In;
+	else
+		m_signal = Signal::None;
 
 	// Read master label override settings
 	m_use_master_label = (xml_element.attribute("use_master_label") == QLatin1String("true"));
