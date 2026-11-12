@@ -208,7 +208,8 @@ void refreshProject(QETProject *project)
 		//The numbers of wires in folios not built stay where they are
 	QHash<QString, QSet<int>> used;
 	if (projectDataBase *store = project->dataBase())
-		for (const auto &number : store->unplacedCableNumbers())
+		for (const auto &number : store->unplacedCableNumbers(
+				 QSet<QUuid>(cores.keyBegin(), cores.keyEnd())))
 			used[number.first].insert(number.second);
 
 		//Who keeps a number several wires hold: the one that held it at

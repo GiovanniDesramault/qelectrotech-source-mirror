@@ -6847,9 +6847,12 @@ int projectDataBase::placedConductorCount(const QUuid &conductor) const
 	@brief projectDataBase::unplacedCableNumbers
 	@return the cable type and number of every numbered wire that is not
 	placed (a folio not built, a folio removed), so that a number given
-	to a placed wire does not repeat one of them
+	to a placed wire does not repeat one of them. The cores of the cables
+	in @p except_cables are left out: their number is the cable's own,
+	which its placed cores carry too.
 */
-QList<QPair<QString, int>> projectDataBase::unplacedCableNumbers() const
+QList<QPair<QString, int>> projectDataBase::unplacedCableNumbers(
+		const QSet<QUuid> &except_cables) const
 {
 	QList<QPair<QString, int>> numbers;
 	for (auto it = m_conductor_properties.constBegin() ;
@@ -6857,7 +6860,8 @@ QList<QPair<QString, int>> projectDataBase::unplacedCableNumbers() const
 		const ConductorProperties &p = it.value();
 		if (p.m_tecside_number && p.m_type_seq >= 1
 				&& !p.m_type_seq_of.isEmpty()
-				&& placedConductorCount(it.key()) == 0)
+				&& placedConductorCount(it.key()) == 0
+				&& !except_cables.contains(p.m_cable_uuid))
 			numbers.append({p.m_type_seq_of, p.m_type_seq});
 	}
 	return numbers;

@@ -158,14 +158,19 @@ class tst_tecsidecablenumber : public QObject
 			ConductorProperties p = c->properties();
 			p.m_tecside_number = true;
 			p.m_potential_type = type;
-			if (cable) {
-				p.m_cable_uuid = cable->uuid();
-				p.m_cable_slot = slot;
-			}
 			c->setProperties(p);
 			diagram->undoStack().push(
 				new AddGraphicsObjectCommand(c, diagram, QPointF()));
 			settle();
+			if (cable) {
+					//The cable claims the wire, as the app does; the
+					//reference on the wire follows from that
+				CableCore core;
+				core.core = slot;
+				core.conductor = c->uuid();
+				cable->setCore(core);
+				settleEdit();
+			}
 			return c;
 		}
 
@@ -414,6 +419,7 @@ class tst_tecsidecablenumber : public QObject
 			QCOMPARE(single->properties().text,
 					 QStringLiteral("AUD-001-03-07"));
 			Cable *cable = r.project.newCable();
+			cable->setCoreCount(12);
 			QList<Conductor *> cores;
 			for (int i = 0 ; i < 12 ; ++i)
 				cores << r.drawAs(r.out(i + 1), r.in(i + 1),
@@ -429,10 +435,54 @@ class tst_tecsidecablenumber : public QObject
 					 QStringLiteral("AUD-002-03-07/12"));
 		}
 
+		void splitCableKeepsItsNumber()
+		{
+				//A core in a folio not built is not placed; the database
+				//holds its properties, and with them the cable's number.
+				//That number is the cable's own, not a foreign one.
+			Rig r(5);
+			Conductor *single = r.drawAs(r.out(0), r.in(0),
+										 QStringLiteral("AUD"));
+			Cable *cable = r.project.newCable();
+			cable->setCoreCount(12);
+			QList<Conductor *> cores;
+			for (int i = 0 ; i < 2 ; ++i)
+				cores << r.drawAs(r.out(i + 1), r.in(i + 1),
+								  QStringLiteral("AUD"), cable, i);
+			QCOMPARE(cable->designation(), QStringLiteral("AUD-002-03-07"));
+
+			Conductor unbuilt(r.out(3), r.in(3));
+			ConductorProperties p = unbuilt.properties();
+			p.m_tecside_number = true;
+			p.m_potential_type = QStringLiteral("AUD");
+			p.m_cable_uuid = cable->uuid();
+			p.m_cable_slot = 2;
+			p.m_type_seq = 2;
+			p.m_type_seq_of = QStringLiteral("AUD");
+			r.project.dataBase()->conductorPropertiesStored(&unbuilt, p);
+			QCOMPARE(r.project.dataBase()->placedConductorCount(
+						 unbuilt.uuid()), 0);
+			QCOMPARE(r.project.dataBase()->unplacedCableNumbers().size(), 1);
+
+			r.settleEdit();
+			QCOMPARE(cable->designation(), QStringLiteral("AUD-002-03-07"));
+			QCOMPARE(cores.first()->properties().m_type_seq, 2);
+			QCOMPARE(cores.last()->properties().text,
+					 QStringLiteral("AUD-002-03-07/2"));
+			QCOMPARE(single->properties().text,
+					 QStringLiteral("AUD-001-03-07"));
+				//Nobody else takes the number
+			Conductor *next = r.drawAs(r.out(4), r.in(4),
+									   QStringLiteral("AUD"));
+			QCOMPARE(next->properties().text,
+					 QStringLiteral("AUD-003-03-07"));
+		}
+
 		void handDesignationWins()
 		{
 			Rig r(4);
 			Cable *cable = r.project.newCable();
+			cable->setCoreCount(12);
 			cable->setDesignation(QStringLiteral("W12"));
 			cable->setDesignationByHand(true);
 			Conductor *core = r.drawAs(r.out(0), r.in(0),
@@ -447,6 +497,7 @@ class tst_tecsidecablenumber : public QObject
 			Conductor *single = r.drawAs(r.out(0), r.in(0),
 										 QStringLiteral("AUD"));
 			Cable *cable = r.project.newCable();
+			cable->setCoreCount(12);
 			Conductor *core = r.drawAs(r.out(1), r.in(1),
 									   QStringLiteral("AUD"), cable, 0);
 			QCOMPARE(single->properties().text,
