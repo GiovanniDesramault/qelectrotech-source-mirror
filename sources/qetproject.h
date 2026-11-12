@@ -450,6 +450,7 @@ class QETProject : public QObject
 		void diagramAdded(QETProject *, Diagram *);
 		void diagramRemoved(QETProject *, Diagram *);
 		void projectModified(QETProject *, bool);
+		void potentialTypesChanged();
 		void projectDiagramsOrderChanged(QETProject *, int, int);
 		void diagramUsedTemplate(TitleBlockTemplatesCollection *, const QString &);
 		void readOnlyChanged(QETProject *, bool);

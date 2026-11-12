@@ -50,6 +50,7 @@ class ConductorPropertiesWidget : public QWidget
 		void addAutonumWidget (QWidget *widget);
 		void setHiddenOneTextPerFolio   (const bool &hide);
 		void setPotentialTypes(const PotentialTypes &types);
+		static QString mixedPotentialType();
 		void setDisabledShowText        (const bool &disable = true);
 		void setHiddenAvailableAutonum (const bool &hide);
 		void setMixedTextFields(const QList<ConductorMultiEdit::TextField> &mixed);

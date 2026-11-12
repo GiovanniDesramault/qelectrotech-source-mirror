@@ -2443,3 +2443,7 @@ endif()
 # A default cable type declared on a symbol terminal types the wire like an
 # instance source does, unless the instance says otherwise.
 qet_add_app_test(tst_symbolpotentialsources tst_symbolpotentialsources.cpp)
+
+# The Selection properties dock offers the potential types to the wires
+# it edits, and shows a blank choice when they disagree.
+qet_add_app_test(tst_dockpotentialtype tst_dockpotentialtype.cpp)

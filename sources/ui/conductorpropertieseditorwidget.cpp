@@ -21,6 +21,7 @@
 
 #include <conductormultiedit.h>
 #include <diagram.h>
+#include <qetproject.h>
 #include <qetgraphicsitem/conductor.h>
 #include "conductorpropertieswidget.h"
 #include <qtextorientationspinboxwidget.h>
@@ -147,6 +148,10 @@ void ConductorPropertiesEditorWidget::setConductors(
 			disconnect(c, &Conductor::propertiesChange,
 					   this, &ConductorPropertiesEditorWidget::scheduleUpdateUi);
 	m_conductors.clear();
+	if (m_project)
+		disconnect(m_project, &QETProject::potentialTypesChanged,
+				   this, &ConductorPropertiesEditorWidget::offerPotentialTypes);
+	m_project = nullptr;
 
 		//The scene gives no order for its selection: sort, so the same
 		//wires always show the same "first" one.
@@ -167,6 +172,17 @@ void ConductorPropertiesEditorWidget::setConductors(
 				this, &ConductorPropertiesEditorWidget::scheduleUpdateUi,
 				Qt::UniqueConnection);
 	}
+
+		//The wires' project says which potential types they can take; the
+		//list follows it when it is edited while the dock is open.
+	if (Conductor *first = firstConductor())
+		if (first->diagram() && first->diagram()->project())
+		{
+			m_project = first->diagram()->project();
+			connect(m_project, &QETProject::potentialTypesChanged,
+					this, &ConductorPropertiesEditorWidget::offerPotentialTypes,
+					Qt::UniqueConnection);
+		}
 
 	const int count = conductors.size();
 	m_count_label->setText(
@@ -327,14 +343,31 @@ void ConductorPropertiesEditorWidget::updateUi()
 	if (list.isEmpty()) return;
 
 	const auto mixed = ConductorMultiEdit::mixedTextFields(list);
+		//Wires on different potential types show none: a type picked is
+		//then an edit, even the first wire's own.
+	ConductorProperties shown = ConductorMultiEdit::shown(list, mixed);
+	for (const ConductorProperties &properties : std::as_const(list))
+		if (properties.m_potential_type != shown.m_potential_type)
+			shown.m_potential_type = ConductorPropertiesWidget::mixedPotentialType();
 	m_updating = true;
-	m_cpw->setProperties(ConductorMultiEdit::shown(list, mixed));
+	if (m_project)
+		m_cpw->setPotentialTypes(m_project->potentialTypes());
+	m_cpw->setProperties(shown);
 	m_cpw->setMixedTextFields(mixed);
 	m_cpw->setTextLocked(list.size() > 1);
 		//Read back rather than keep the conductor's own values: a value the
 		//widget cannot show exactly must not count as an edit.
 	m_shown = m_cpw->properties();
 	m_updating = false;
+}
+
+/**
+	@brief ConductorPropertiesEditorWidget::offerPotentialTypes
+	The project's potential types changed: offer the new list.
+*/
+void ConductorPropertiesEditorWidget::offerPotentialTypes()
+{
+	scheduleUpdateUi();
 }
 
 /**

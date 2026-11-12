@@ -181,7 +181,9 @@ ConductorProperties ConductorPropertiesWidget::properties() const
 	properties_.m_function              = ui -> m_function_le->text();
 		//Hidden when the project does not draw from potential types: the
 		//conductor keeps the type it has
+		//(or blank, the selected wires disagreeing on it, until one is chosen)
 	properties_.m_potential_type        = ui->m_potential_type_cb->isHidden()
+			|| ui->m_potential_type_cb->currentIndex() == -1
 			? m_properties.m_potential_type
 			: ui->m_potential_type_cb->currentData().toString();
 	properties_.m_cable                 = ui -> m_cable_le->text();
@@ -268,6 +270,17 @@ void ConductorPropertiesWidget::setPotentialTypes(const PotentialTypes &types)
 }
 
 /**
+	@brief ConductorPropertiesWidget::mixedPotentialType
+	@return the potential type to give setProperties() when the edited
+	conductors do not share one: the choice is shown blank, and properties()
+	gives this back until a type is chosen. It is no type a conductor has.
+*/
+QString ConductorPropertiesWidget::mixedPotentialType()
+{
+	return QStringLiteral("\x01mixed");
+}
+
+/**
 	@brief ConductorPropertiesWidget::selectPotentialType
 	Show \p name in the potential type choice. A name the project no
 	longer lists is added to it, so opening and closing the dialog does not
@@ -277,6 +290,10 @@ void ConductorPropertiesWidget::setPotentialTypes(const PotentialTypes &types)
 void ConductorPropertiesWidget::selectPotentialType(const QString &name)
 {
 	QComboBox *cb = ui->m_potential_type_cb;
+	if (name == mixedPotentialType()) {
+		cb->setCurrentIndex(-1);
+		return;
+	}
 	int index = cb->findData(name);
 	if (index == -1) {
 		cb->addItem(name, name);

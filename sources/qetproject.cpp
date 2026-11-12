@@ -5226,6 +5226,7 @@ void QETProject::setPotentialTypes(const PotentialTypes &potential_types)
 		return;
 	}
 	m_potential_types = potential_types;
+	emit potentialTypesChanged();
 	storeSettings();
 	setModified(true);
 	for (Diagram *diagram : folios()) {

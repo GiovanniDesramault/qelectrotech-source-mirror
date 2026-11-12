@@ -29,6 +29,7 @@ class Conductor;
 class ConductorPropertiesWidget;
 class QCheckBox;
 class QLabel;
+class QETProject;
 
 /**
 	@brief The ConductorPropertiesEditorWidget class
@@ -66,6 +67,7 @@ class ConductorPropertiesEditorWidget : public PropertiesEditorWidget
 		void connectChangeSignals();
 		void disconnectChangeSignals();
 		void scheduleUpdateUi();
+		void offerPotentialTypes();
 		Conductor *firstConductor() const;
 
 	private:
@@ -73,6 +75,7 @@ class ConductorPropertiesEditorWidget : public PropertiesEditorWidget
 		QCheckBox *m_apply_all_cb = nullptr;
 		QLabel *m_count_label = nullptr;
 		QList<QPointer<Conductor>> m_conductors;
+		QPointer<QETProject> m_project;
 			//What the widget showed before the edit: the fields that
 			//differ from it are the ones the user changed.
 		ConductorProperties m_shown;
