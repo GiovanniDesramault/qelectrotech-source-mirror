@@ -24,6 +24,7 @@
 #include "qetgraphicsitem/terminal.h"
 #include "qetproject.h"
 #include "undocommand/addgraphicsobjectcommand.h"
+#include "undocommand/removediagramcommand.h"
 
 #include <QDomDocument>
 #include <QTemporaryDir>
@@ -103,36 +104,117 @@ class tst_symbolpotentialsources : public QObject
 
 	QTemporaryDir m_dir;
 
+	//The fixture with potential_type="SDI" and alternating signals on
+	//every terminal its definitions declare, as a file of its own
+	QString defaultsFile(
+		const QString &fixture = QStringLiteral("every_feature.qet"))
+	{
+		QFile in(QFINDTESTDATA("fixtures/" + fixture));
+		if (!(in.open(QIODevice::ReadOnly)))
+			return QString();
+		QDomDocument document;
+		if (!(document.setContent(&in)))
+			return QString();
+		in.close();
+		int count = 0;
+		const QDomNodeList terminals = document.elementsByTagName(
+			QStringLiteral("terminal"));
+		for (int i = 0 ; i < terminals.size() ; ++i) {
+			QDomElement t = terminals.at(i).toElement();
+			if (t.parentNode().nodeName() != QLatin1String("description"))
+				continue;
+			t.setAttribute(QStringLiteral("potential_type"),
+					   QStringLiteral("SDI"));
+			t.setAttribute(QStringLiteral("signal"),
+					   count++ % 2 ? "in" : "out");
+		}
+		if (!(count > 0))
+			return QString();
+		const QString path = m_dir.filePath(fixture);
+		QFile out(path);
+		if (!(out.open(QIODevice::WriteOnly)))
+			return QString();
+		out.write(document.toByteArray());
+		out.close();
+
+		return path;
+	}
+
+		//Remove a folio holding symbols with defaults, built or not as
+		//@p unbuilt says, put it back by undo, and check that its terminal
+		//rows and the types of its wires are as they were
+	bool roundTrip(QETProject &project, bool unbuilt)
+	{
+		project.setPotentialTypes(types(PotentialTypes::Mode::AtSource));
+		projectDataBase *db = project.dataBase();
+		const auto rows = [&](Diagram *folio) {
+			QStringList result;
+			QSqlQuery query(db->database());
+			query.prepare(QStringLiteral(
+				"SELECT element_uuid || uuid || ':' || potential_type || "
+				"':' || signal FROM terminal WHERE element_uuid IN "
+				"(SELECT uuid FROM element WHERE diagram_uuid = :folio) "
+				"ORDER BY 1"));
+			query.bindValue(QStringLiteral(":folio"), folio->uuid().toString());
+			if (query.exec())
+				while (query.next()) result << query.value(0).toString();
+			return result;
+		};
+		const auto typesIn = [&](Diagram *folio) {
+			QHash<QUuid, QString> result;
+			QSqlQuery query(db->database());
+			query.prepare(QStringLiteral(
+				"SELECT uuid FROM conductor WHERE diagram_uuid = :folio"));
+			query.bindValue(QStringLiteral(":folio"), folio->uuid().toString());
+			const auto derived = db->derivedPotentialTypes().type_of;
+			if (query.exec())
+				while (query.next()) {
+					const QUuid wire(query.value(0).toString());
+					if (derived.contains(wire))
+						result.insert(wire, derived.value(wire));
+				}
+			return result;
+		};
+		Diagram *folio = nullptr;
+		for (Diagram *d : project.folios())
+			if (d && d->isLoaded() != unbuilt && !rows(d).isEmpty()
+					&& !typesIn(d).isEmpty()) {
+				folio = d;
+				break;
+			}
+		if (!folio) {
+			qWarning("no folio with symbol defaults, unbuilt = %d", unbuilt);
+			return false;
+		}
+		const QStringList before = rows(folio);
+		const QHash<QUuid, QString> typed = typesIn(folio);
+		if (!before.first().contains(QStringLiteral(":SDI:")))
+			return false;
+		const bool built = folio->isLoaded();
+
+		project.undoStack()->push(new RemoveDiagramCommand(&project, folio));
+		if (!rows(folio).isEmpty())
+			return false;
+		project.undoStack()->undo();
+
+		qInfo("folio %s: built before removal = %d, rows %d, wires %d",
+			  unbuilt ? "unbuilt" : "built", built, int(before.size()),
+			  int(typed.size()));
+		if (built == unbuilt)
+			return false;
+		for (const QString &type : typed)
+			if (type != QLatin1String("SDI")) return false;
+		return rows(folio) == before && typesIn(folio) == typed;
+	}
+
 	private slots:
 		/// The symbol's own <terminal> attributes reach the terminal table,
 		/// whether the project is opened or a wire is drawn afterwards, and
 		/// type the wire: no UPDATE of the table here
 		void definitionAttributesReachTheTable()
 		{
-			QFile in(QFINDTESTDATA("fixtures/every_feature.qet"));
-			QVERIFY(in.open(QIODevice::ReadOnly));
-			QDomDocument document;
-			QVERIFY(document.setContent(&in));
-			in.close();
-			int count = 0;
-			const QDomNodeList terminals = document.elementsByTagName(
-				QStringLiteral("terminal"));
-			for (int i = 0 ; i < terminals.size() ; ++i) {
-				QDomElement t = terminals.at(i).toElement();
-				if (t.parentNode().nodeName() != QLatin1String("description"))
-					continue;
-				t.setAttribute(QStringLiteral("potential_type"),
-							   QStringLiteral("SDI"));
-				t.setAttribute(QStringLiteral("signal"),
-							   count++ % 2 ? "in" : "out");
-			}
-			QVERIFY(count > 0);
-			const QString path = m_dir.filePath(QStringLiteral("defaults.qet"));
-			QFile out(path);
-			QVERIFY(out.open(QIODevice::WriteOnly));
-			out.write(document.toByteArray());
-			out.close();
-
+			const QString path = defaultsFile();
+			QVERIFY(!path.isEmpty());
 			QETProject project(path);
 			project.setPotentialTypes(types(PotentialTypes::Mode::AtSource));
 			Conductor *c = wire(project);
@@ -246,6 +328,35 @@ class tst_symbolpotentialsources : public QObject
 			QVERIFY(project.dataBase()->potentialTypeMismatches().isEmpty());
 			PotentialType painted;
 			QVERIFY(!c->potentialTypeFormat(&painted));
+		}
+
+		/// A folio removed and put back by undo keeps the symbols'
+		/// defaults, whether it was built (it writes its rows again) or
+		/// not (its kept rows are copied back)
+		void removedFolioKeepsTheDefaults()
+		{
+			const QString path = defaultsFile();
+			QVERIFY(!path.isEmpty());
+				//Built: the folio writes its rows again when put back
+			{
+				QETProject project(path);
+				QVERIFY(roundTrip(project, false));
+			}
+				//Not built (a project opened from a .qetz): the rows kept
+				//when it was removed are copied back
+			const QString many = defaultsFile(QStringLiteral("wiring_list_arrows.qet"));
+			QVERIFY(!many.isEmpty());
+			const QString zipped = m_dir.filePath(QStringLiteral("defaults.qetz"));
+			{
+				QETProject project(many);
+				QString error;
+				QVERIFY2(project.writeContainerFile(zipped, &error),
+						 qPrintable(error));
+			}
+			QETProject project(zipped);
+			QVERIFY2(project.unloadedFolioCount() > 0,
+					 "the .qetz built every folio at the open");
+			QVERIFY(roundTrip(project, true));
 		}
 };
 
