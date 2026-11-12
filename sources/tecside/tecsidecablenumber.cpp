@@ -17,6 +17,8 @@
 */
 #include "tecside/tecsidecablenumber.h"
 
+#include "cable/cable.h"
+#include "cable/cablemanager.h"
 #include "conductorproperties.h"
 #include "dataBase/projectdatabase.h"
 #include "diagram.h"
@@ -25,10 +27,12 @@
 #include "qetgraphicsitem/terminal.h"
 #include "qetproject.h"
 
+#include <QDebug>
 #include <QHash>
 #include <QList>
 #include <QMap>
 #include <QUuid>
+#include <algorithm>
 
 namespace TecsideCableNumber
 {
@@ -50,12 +54,25 @@ namespace
 		}
 	}
 
+		//One core of a multicore cable
+	struct Core
+	{
+		Conductor *conductor = nullptr;
+		ConductorProperties properties;
+	};
+
+		//What takes one number: a single wire, or a whole multicore cable
+		//(then @a conductor and @a properties are those of its first core,
+		//or of the first one that already holds the number)
 	struct Wire
 	{
+		QUuid id;
 		Conductor *conductor = nullptr;
 		ConductorProperties properties;
 		QString type;
 		bool keeps = false;
+		Cable *cable = nullptr;
+		QList<Core> cores;
 	};
 
 	QString locationOf(Terminal *terminal)
@@ -120,25 +137,71 @@ std::pair<QString, QString> fromTo(
 	undo step of its own, so undoing the wire takes it away as well.
 	Two wires that carry the same type and number (a copy) are told apart
 	by their uuid: the lower one keeps it, the others take the next free.
+	A multicore cable takes one number from the same per-type counter, for
+	its name and for all its cores (written to every core, so the number
+	survives the loss of the first one).
 */
 void refreshProject(QETProject *project)
 {
 	if (!project) return;
 	QList<Wire> wires;
-	QSet<QUuid> built;
+	QMap<QUuid, Wire> cables;
+	QMap<QUuid, QList<QPair<QString, Core>>> cores;
 	for (Diagram *folio : project->folios()) {
 		if (!folio || !folio->isLoaded()) continue;
 		for (Conductor *c : folio->conductors()) {
-			built.insert(c->uuid());
 			Wire wire;
 			wire.conductor = c;
 			wire.properties = c->properties();
 			if (!wire.properties.m_tecside_number) continue;
+			wire.id = c->uuid();
 			wire.type = wire.properties.m_potential_type.isEmpty()
 					? project->derivedPotentialType(c->uuid())
 					: wire.properties.m_potential_type;
-			wires << wire;
+			Cable *cable = CableManager::cableByUuid(
+					project, wire.properties.m_cable_uuid);
+			if (cable)
+				cores[cable->uuid()] << qMakePair(
+						wire.type, Core{c, wire.properties});
+			else
+				wires << wire;
 		}
+	}
+		//A multicore takes one number for all its cores. Its type is the
+		//one of its first core.
+	for (auto it = cores.begin() ; it != cores.end() ; ++it) {
+		auto &list = it.value();
+		std::sort(list.begin(), list.end(),
+				  [](const QPair<QString, Core> &a,
+					 const QPair<QString, Core> &b) {
+			const int sa = a.second.properties.m_cable_slot;
+			const int sb = b.second.properties.m_cable_slot;
+			return sa != sb ? sa < sb
+					: a.second.conductor->uuid().toString()
+					< b.second.conductor->uuid().toString();
+		});
+		Wire wire;
+		wire.id = it.key();
+		wire.cable = CableManager::cableByUuid(project, it.key());
+		wire.type = list.first().first;
+		for (const auto &core : std::as_const(list)) {
+			if (core.first != wire.type)
+				qWarning() << "TECside cable number: cable"
+						   << wire.cable->designation()
+						   << "mixes cable types" << wire.type
+						   << "and" << core.first;
+			wire.cores << core.second;
+		}
+		wire.conductor = wire.cores.first().conductor;
+		wire.properties = wire.cores.first().properties;
+		for (const Core &core : std::as_const(wire.cores)) {
+			if (core.properties.m_type_seq >= 1
+					&& core.properties.m_type_seq_of == wire.type) {
+				wire.properties = core.properties;
+				break;
+			}
+		}
+		wires << wire;
 	}
 	if (wires.isEmpty()) return;
 
@@ -163,11 +226,11 @@ void refreshProject(QETProject *project)
 		if (!held(w) || used.value(w.type).contains(w.properties.m_type_seq))
 			continue;
 		const QPair<QString, int> key(w.type, w.properties.m_type_seq);
-		const QString uuid = w.conductor->uuid().toString();
+		const QString uuid = w.id.toString();
 		const auto known = keeper.constFind(key);
 		if (known == keeper.constEnd() || uuid < *known)
 			keeper.insert(key, uuid);
-		if (memory.value(w.conductor->uuid()) == key) {
+		if (memory.value(w.id) == key) {
 			if (previous.contains(key)) several.insert(key);
 			previous.insert(key, uuid);
 		}
@@ -178,37 +241,63 @@ void refreshProject(QETProject *project)
 	for (Wire &w : wires) {
 		if (!held(w)) continue;
 		w.keeps = keeper.value({w.type, w.properties.m_type_seq})
-				== w.conductor->uuid().toString();
+				== w.id.toString();
 		if (w.keeps) used[w.type].insert(w.properties.m_type_seq);
 	}
 
 	for (Wire &w : wires) {
-		ConductorProperties p = w.properties;
-		if (w.type.isEmpty()) {
-			p.m_type_seq = -1;
-			p.m_type_seq_of.clear();
-			p.text.clear();
-		} else {
+		int seq = -1;
+		QString text;
+		if (!w.type.isEmpty()) {
+			seq = w.properties.m_type_seq;
 			if (!w.keeps) {
-				p.m_type_seq = nextFree(used.value(w.type));
-				p.m_type_seq_of = w.type;
-				used[w.type].insert(p.m_type_seq);
+				seq = nextFree(used.value(w.type));
+				used[w.type].insert(seq);
 			}
 			const auto ends = fromTo(
 					locationOf(w.conductor->terminal1),
 					signalOf(w.conductor->terminal1),
 					locationOf(w.conductor->terminal2),
 					signalOf(w.conductor->terminal2));
-			p.text = format(w.type, p.m_type_seq, ends.first, ends.second);
+			text = format(w.type, seq, ends.first, ends.second);
 		}
-			//A formula would write the text again
-		p.m_formula.clear();
-		if (p.m_type_seq >= 1 && !w.type.isEmpty())
-			memory.insert(w.conductor->uuid(), {w.type, p.m_type_seq});
+		if (seq >= 1)
+			memory.insert(w.id, {w.type, seq});
 		else
-			memory.remove(w.conductor->uuid());
-		if (p == w.properties) continue;
-		w.conductor->setProperties(p);
+			memory.remove(w.id);
+
+		if (!w.cable) {
+			ConductorProperties p = w.properties;
+			p.m_type_seq = seq;
+			p.m_type_seq_of = seq >= 1 ? w.type : QString();
+			p.text = text;
+				//A formula would write the text again
+			p.m_formula.clear();
+			if (p != w.properties)
+				w.conductor->setProperties(p);
+			continue;
+		}
+
+			//Like the numbers of single wires, the name of a cable is
+			//derived and is written without an undo step of its own,
+			//unless the user typed one in
+		QString name = text;
+		if (!text.isEmpty() && !w.cable->designationByHand())
+			w.cable->setDesignation(text);
+		else if (w.cable->designationByHand()
+				 && !w.cable->designation().isEmpty())
+			name = w.cable->designation();
+		for (const Core &core : std::as_const(w.cores)) {
+			ConductorProperties p = core.properties;
+			p.m_type_seq = seq;
+			p.m_type_seq_of = seq >= 1 ? w.type : QString();
+			p.text = name.isEmpty() ? QString()
+					: QStringLiteral("%1/%2").arg(
+						  name, QString::number(p.m_cable_slot + 1));
+			p.m_formula.clear();
+			if (p != core.properties)
+				core.conductor->setProperties(p);
+		}
 	}
 }
 }

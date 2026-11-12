@@ -18,6 +18,7 @@
 #include "ElementsCollection/elementslocation.h"
 #include "ElementsCollection/xmlelementcollection.h"
 #include "QPropertyUndoCommand/qpropertyundocommand.h"
+#include "cable/cable.h"
 #include "conductorproperties.h"
 #include "diagram.h"
 #include "diagramcontent.h"
@@ -62,11 +63,12 @@ class tst_tecsidecablenumber : public QObject
 		Element *camera = nullptr;
 		Element *switcher = nullptr;
 
-		Rig()
+		Rig(int terminalCount = 4) : m_terminals(terminalCount)
 		{
 			PotentialTypes types;
 			types.setMode(PotentialTypes::Mode::AtSource);
 			types.setTypes({{QStringLiteral("SDI"), QColor(0, 0, 255), Qt::SolidLine, 3},
+							{QStringLiteral("AUD"), QColor(255, 128, 0), Qt::SolidLine, 3},
 							{QStringLiteral("HDM"), QColor(0, 160, 0), Qt::SolidLine, 3},
 							{QStringLiteral("NET"), QColor(200, 0, 0), Qt::SolidLine, 3}});
 			project.setPotentialTypes(types);
@@ -80,12 +82,14 @@ class tst_tecsidecablenumber : public QObject
 			settle();
 		}
 
+		int m_terminals = 4;
+
 		Element *symbol(const QString &name, const QString &signal, bool hdm)
 		{
 			auto *collection = project.embeddedElementCollection();
 			QString terminals;
-			for (int i = 0 ; i < 4 ; ++i) {
-				const bool last = i == 3;
+			for (int i = 0 ; i < m_terminals ; ++i) {
+				const bool last = i == m_terminals - 1;
 				terminals += QStringLiteral(
 					"<terminal x=\"%1\" y=\"20\" orientation=\"s\" uuid=\"%2\" "
 					"potential_type=\"%3\" signal=\"%4\"/>")
@@ -139,6 +143,25 @@ class tst_tecsidecablenumber : public QObject
 			auto *c = new Conductor(a, b);
 			ConductorProperties p = c->properties();
 			p.m_tecside_number = numbered;
+			c->setProperties(p);
+			diagram->undoStack().push(
+				new AddGraphicsObjectCommand(c, diagram, QPointF()));
+			settle();
+			return c;
+		}
+
+			//A numbered wire of its own type, a core of @p cable when given
+		Conductor *drawAs(Terminal *a, Terminal *b, const QString &type,
+						  Cable *cable = nullptr, int slot = -1)
+		{
+			auto *c = new Conductor(a, b);
+			ConductorProperties p = c->properties();
+			p.m_tecside_number = true;
+			p.m_potential_type = type;
+			if (cable) {
+				p.m_cable_uuid = cable->uuid();
+				p.m_cable_slot = slot;
+			}
 			c->setProperties(p);
 			diagram->undoStack().push(
 				new AddGraphicsObjectCommand(c, diagram, QPointF()));
@@ -380,6 +403,66 @@ class tst_tecsidecablenumber : public QObject
 			Conductor *other = keeper == wires[0] ? wires[1] : wires[0];
 			QCOMPARE(keeper->properties().text, QStringLiteral("SDI-001-03-07"));
 			QCOMPARE(other->properties().text, QStringLiteral("SDI-002-03-07"));
+		}
+
+		void multicoreGetsOneNumber()
+		{
+			Rig r(13);
+			Conductor *single = r.draw(r.out(0), r.in(0));
+			single->setSelected(false);
+			r.setOwnType(single, QStringLiteral("AUD"));
+			QCOMPARE(single->properties().text,
+					 QStringLiteral("AUD-001-03-07"));
+			Cable *cable = r.project.newCable();
+			QList<Conductor *> cores;
+			for (int i = 0 ; i < 12 ; ++i)
+				cores << r.drawAs(r.out(i + 1), r.in(i + 1),
+								  QStringLiteral("AUD"), cable, i);
+			QCOMPARE(single->properties().text,
+					 QStringLiteral("AUD-001-03-07"));
+			QCOMPARE(cable->designation(),
+					 QStringLiteral("AUD-002-03-07"));
+			QCOMPARE(cores.first()->properties().m_type_seq, 2);
+			QCOMPARE(cores.first()->properties().text,
+					 QStringLiteral("AUD-002-03-07/1"));
+			QCOMPARE(cores.last()->properties().text,
+					 QStringLiteral("AUD-002-03-07/12"));
+		}
+
+		void handDesignationWins()
+		{
+			Rig r(4);
+			Cable *cable = r.project.newCable();
+			cable->setDesignation(QStringLiteral("W12"));
+			cable->setDesignationByHand(true);
+			Conductor *core = r.drawAs(r.out(0), r.in(0),
+									   QStringLiteral("AUD"), cable, 2);
+			QCOMPARE(cable->designation(), QStringLiteral("W12"));
+			QCOMPARE(core->properties().text, QStringLiteral("W12/3"));
+		}
+
+		void singleAndMulticoreNeverClash()
+		{
+			Rig r(4);
+			Conductor *single = r.drawAs(r.out(0), r.in(0),
+										 QStringLiteral("AUD"));
+			Cable *cable = r.project.newCable();
+			Conductor *core = r.drawAs(r.out(1), r.in(1),
+									   QStringLiteral("AUD"), cable, 0);
+			QCOMPARE(single->properties().text,
+					 QStringLiteral("AUD-001-03-07"));
+			QCOMPARE(cable->designation(),
+					 QStringLiteral("AUD-002-03-07"));
+			r.remove(single);
+			QCOMPARE(cable->designation(),
+					 QStringLiteral("AUD-002-03-07"));
+			QCOMPARE(core->properties().text,
+					 QStringLiteral("AUD-002-03-07/1"));
+				//The freed number goes to the next single wire
+			Conductor *again = r.drawAs(r.out(2), r.in(2),
+										QStringLiteral("AUD"));
+			QCOMPARE(again->properties().text,
+					 QStringLiteral("AUD-001-03-07"));
 		}
 };
 
