@@ -2439,3 +2439,7 @@ if(NOT BUILD_WITH_KF)
     ${QET_DIR}/sources/ui/nokde)
   target_link_libraries(tst_nokdecolorcombo PRIVATE Qt::Test Qt::Widgets)
 endif()
+
+# A default cable type declared on a symbol terminal types the wire like an
+# instance source does, unless the instance says otherwise.
+qet_add_app_test(tst_symbolpotentialsources tst_symbolpotentialsources.cpp)

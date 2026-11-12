@@ -1020,6 +1020,21 @@ void Terminal::newUuid()
 	d->m_uuid = QUuid::createUuid();
 }
 
+/**
+	@brief Terminal::signalName
+	@return the signal direction the symbol declares, as it is written in
+	the XML and stored in the terminal table: "out", "in", or an empty
+	string when it declares none
+*/
+QString Terminal::signalName() const
+{
+	switch (d->m_signal) {
+	case TerminalData::Signal::Out: return QStringLiteral("out");
+	case TerminalData::Signal::In: return QStringLiteral("in");
+	default: return QString();
+	}
+}
+
 QUuid Terminal::stableUuid() const
 {
 	if (!d->m_uuid.isNull()) {

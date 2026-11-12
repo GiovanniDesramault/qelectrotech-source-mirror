@@ -638,7 +638,9 @@ class projectDataBase : public QObject
 		void watchConductor(Conductor *conductor);
 		void insertTerminal(Terminal *terminal);
 		void insertTerminal(const QString &uuid, const QString &element_uuid,
-							const QString &name, const QVariant &index);
+							const QString &name, const QVariant &index,
+							const QString &potential_type = QString(),
+							const QString &signal = QString());
 		void prepareQuery();
 		static QHash<QString, QString> elementInfoToString(
 				Element *elmt);

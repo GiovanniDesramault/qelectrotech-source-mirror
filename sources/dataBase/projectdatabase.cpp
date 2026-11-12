@@ -1097,6 +1097,8 @@ struct DocumentTerminal
 	QString name;
 	bool master_label = false;
 	QVariant index;
+	QString potential_type;
+	QString signal;
 };
 
 	//The index each of @p points has in Element::terminals() -- the index
@@ -1391,6 +1393,8 @@ bool projectDataBase::populateFromDocument(const QDomDocument &document, QString
 					terminal.uuid = terminal_uuid.toString();
 					terminal.name = t.attribute(QStringLiteral("name"));
 					terminal.master_label = t.attribute(QStringLiteral("use_master_label")) == QLatin1String("true");
+					terminal.potential_type = t.attribute(QStringLiteral("potential_type"));
+					terminal.signal = t.attribute(QStringLiteral("signal"));
 					const int place = parsed.indexOf(t);
 					if (place >= 0) {
 						terminal.index = indexes.at(place);
@@ -1656,7 +1660,8 @@ bool projectDataBase::populateFromDocument(const QDomDocument &document, QString
 								std::make_pair(conductor.element2, conductor.terminal2)}) {
 			const DocumentElement &owner = elements.at(element_index.value(end.first));
 			const DocumentTerminal &terminal = owner.terminals.value(QUuid(end.second));
-			insertTerminal(end.second, end.first, terminal.name, terminal.index);
+			insertTerminal(end.second, end.first, terminal.name, terminal.index,
+						   terminal.potential_type, terminal.signal);
 		}
 		m_insert_conductor_query.bindValue(QStringLiteral(":uuid"), conductor.uuid);
 		m_insert_conductor_query.bindValue(QStringLiteral(":diagram_uuid"), conductor.diagram_uuid);
@@ -2130,6 +2135,27 @@ projectDataBase::DerivedPotentialTypes projectDataBase::derivedPotentialTypesOf(
 				source.first = QUuid(query.value(3).toString());
 			else if (query.value(2).toString() == QLatin1String("type"))
 				source.second = query.value(3).toString();
+		}
+	}
+
+		//The default type a symbol declares on a terminal is a source too,
+		//but an element that declares an instance source for the same
+		//terminal keeps what it says
+	{
+		QSet<std::pair<QUuid, QUuid>> declared;
+		for (auto it = sources.constBegin() ; it != sources.constEnd() ; ++it)
+			declared.insert({it.key().first, it.value().first});
+		QSqlQuery query(db);
+		query.setForwardOnly(true);
+		query.exec(QStringLiteral("SELECT element_uuid, uuid, potential_type FROM terminal "
+								  "WHERE potential_type <> ''"));
+		int ord = -1;
+		while (query.next()) {
+			const QUuid element(query.value(0).toString());
+			const QUuid terminal(query.value(1).toString());
+			if (declared.contains({element, terminal})) continue;
+				//Negative ords cannot meet an instance source's own
+			sources.insert({element, ord--}, {terminal, query.value(2).toString()});
 		}
 	}
 	if (sources.isEmpty())
@@ -4680,6 +4706,8 @@ bool projectDataBase::createDataBase()
 						  "element_uuid VARCHAR(50) NOT NULL,"
 						  "name VARCHAR(50),"
 						  "terminal_index INTEGER,"
+						  "potential_type TEXT,"
+						  "signal TEXT,"
 						  "PRIMARY KEY (uuid, element_uuid),"
 						  "FOREIGN KEY (element_uuid) REFERENCES element (uuid)"
 						  ")");
@@ -8444,7 +8472,9 @@ void projectDataBase::insertTerminal(Terminal *terminal)
 	insertTerminal(terminal->stableUuid().toString(),
 				   terminal->parentElement()->uuid().toString(),
 				   terminal->name(),
-				   terminalIndexes(points).value(terminals.indexOf(terminal)));
+				   terminalIndexes(points).value(terminals.indexOf(terminal)),
+				   terminal->potentialTypeDefault(),
+				   terminal->signalName());
 }
 
 /**
@@ -8452,12 +8482,16 @@ void projectDataBase::insertTerminal(Terminal *terminal)
 	insertTerminal(Terminal *) from values rather than a live terminal.
 */
 void projectDataBase::insertTerminal(const QString &uuid, const QString &element_uuid,
-									 const QString &name, const QVariant &index)
+									 const QString &name, const QVariant &index,
+									 const QString &potential_type,
+									 const QString &signal)
 {
 	m_insert_terminal_query.bindValue(":uuid", uuid);
 	m_insert_terminal_query.bindValue(":element_uuid", element_uuid);
 	m_insert_terminal_query.bindValue(":name", name);
 	m_insert_terminal_query.bindValue(":terminal_index", index);
+	m_insert_terminal_query.bindValue(":potential_type", potential_type);
+	m_insert_terminal_query.bindValue(":signal", signal);
 	if (!m_insert_terminal_query.exec()) {
 		qDebug() << "projectDataBase::insertTerminal insert error : " << m_insert_terminal_query.lastError();
 	}
@@ -8605,7 +8639,7 @@ void projectDataBase::prepareQuery()
 
 		//INSERT TERMINAL
 	m_insert_terminal_query = QSqlQuery(m_data_base);
-	m_insert_terminal_query.prepare("INSERT OR IGNORE INTO terminal (uuid, element_uuid, name, terminal_index) VALUES (:uuid, :element_uuid, :name, :terminal_index)");
+	m_insert_terminal_query.prepare("INSERT OR IGNORE INTO terminal (uuid, element_uuid, name, terminal_index, potential_type, signal) VALUES (:uuid, :element_uuid, :name, :terminal_index, :potential_type, :signal)");
 
 		//INSERT CONDUCTOR
 	m_insert_conductor_query = QSqlQuery(m_data_base);

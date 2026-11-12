@@ -86,6 +86,9 @@ class Terminal : public QGraphicsObject
 		bool useMasterLabel() const { return d->m_use_master_label; }
 		void setUseMasterLabel(bool use);
 		int masterLabelIndex() const { return d->m_master_label_index; }
+		QString potentialTypeDefault() const
+		{ return d->m_potential_type_default; }
+		QString signalName() const;
 		void setMasterLabelIndex(int index);
 
 		QList<Conductor *> conductors() const;
