@@ -42,7 +42,14 @@ jobs:
           -DPACKAGE_TESTS=ON
 
       - name: Build
-        run: cmake --build build --parallel
+        # Only what ships and what the tests below run: the full tree has
+        # hundreds of test/probe targets.
+        run: >
+          cmake --build build --parallel --target
+          qelectrotech
+          tst_terminalcabledefaults tst_symbolpotentialsources
+          tst_dockpotentialtype tst_tecsideconductorprops
+          tst_tecsidecablenumber tst_tecsideexport tst_textatends
 
       - name: Run the TECside tests
         env:
