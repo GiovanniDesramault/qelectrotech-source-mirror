@@ -1,0 +1,91 @@
+name: macOS DMG (TECside)
+
+on:
+  # TECside releases: v0.200.1-tecside.1, v0.200.1-tecside.2, ...
+  push:
+    tags: ['v*-tecside.*']
+  workflow_dispatch:
+
+jobs:
+  build-dmg:
+    name: macOS ${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # macos-13 is retired: arm64 on macos-14, x86_64 on macos-15-intel
+          - runner: macos-14
+            arch: arm64
+          - runner: macos-15-intel
+            arch: x86_64
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Install dependencies
+        run: brew install cmake qt sqlite ninja
+
+      - name: Configure
+        run: >
+          cmake -S . -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=Release
+          -DBUILD_WITH_KF=OFF
+          -DPACKAGE_TESTS=ON
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Run the TECside tests
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: >
+          ctest --test-dir build --output-on-failure
+          -R "tst_tecside|tst_terminalcabledefaults|tst_symbolpotentialsources|tst_dockpotentialtype|tst_textatends"
+
+      # The app finds its data in Contents/Resources (see
+      # cmake/paths_compilation_installation.cmake, APPLE), which the build
+      # tree does not fill: copy it in before macdeployqt.
+      - name: Fill the bundle resources
+        run: |
+          set -euo pipefail
+          RES=build/qelectrotech.app/Contents/Resources
+          mkdir -p "$RES"
+          cp -R elements titleblocks examples "$RES/"
+          mkdir -p "$RES/lang"
+          cp build/lang/*.qm "$RES/lang/"
+
+      - name: Bundle Qt and build the DMG
+        run: |
+          set -euo pipefail
+          # ad-hoc signature: arm64 will not launch an unsigned bundle
+          macdeployqt build/qelectrotech.app -dmg -codesign=-
+          VERSION="${GITHUB_REF_NAME}"
+          [ "${GITHUB_REF_TYPE}" = "tag" ] || VERSION="dev-${GITHUB_SHA::7}"
+          mkdir -p dist
+          mv build/qelectrotech.dmg "dist/QElectroTech-${VERSION}-macos-${{ matrix.arch }}.dmg"
+          ls -lh dist
+
+      - name: Upload DMG artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: qelectrotech-macos-${{ matrix.arch }}
+          path: dist/*.dmg
+          retention-days: 40
+          if-no-files-found: error
+
+      - name: Upload DMG to the release
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v3
+        with:
+          files: dist/*.dmg
+          fail_on_unmatched_files: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

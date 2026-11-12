@@ -528,7 +528,9 @@ jobs:
   publish-nightly-assets:
     needs: [build-windows-qt6]
     runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request'
+    # Default branch only: a run on another branch (e.g. tecside) must not
+    # overwrite the rolling nightly release.
+    if: github.event_name != 'pull_request' && github.ref_name == github.event.repository.default_branch
     permissions:
       contents: write
     env:

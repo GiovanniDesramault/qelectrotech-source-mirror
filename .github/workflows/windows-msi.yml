@@ -6,6 +6,11 @@ on:
     workflows: ["Windows Build"]
     types: [completed]
     branches: [master]
+  # TECside releases: the MSI is attached to the release of the tag. Run
+  # "Windows Build" on the tagged commit first (its portable artifact is
+  # what gets packaged).
+  push:
+    tags: ['v*-tecside.*']
   # Manual trigger still available (e.g. for a specific run_id)
   workflow_dispatch:
     inputs:
@@ -28,6 +33,7 @@ jobs:
     # Only runs if Windows Build succeeded (or triggered manually)
     if: >
       github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'push' ||
       github.event.workflow_run.conclusion == 'success'
 
     strategy:
@@ -78,6 +84,24 @@ jobs:
       #    Switched to `gh run download` here because nick-fields/retry
       #    can only retry a shell command, not re-invoke a `uses:` step.
       # ----------------------------------------------------------------
+      # On a tag push there is no workflow_run: use the successful
+      # "Windows Build" run of the tagged commit.
+      - name: Find the Windows Build run of this tag
+        id: tagrun
+        if: github.event_name == 'push'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RUN=$(gh run list --repo "${{ github.repository }}" --workflow "Windows Build" \
+                --commit "${{ github.sha }}" --status success --limit 1 \
+                --json databaseId --jq '.[0].databaseId')
+          if [ -z "$RUN" ] || [ "$RUN" = "null" ]; then
+            echo "::error::No successful 'Windows Build' run for ${{ github.sha }} - run it on this commit before tagging."
+            exit 1
+          fi
+          echo "run_id=$RUN" >> "$GITHUB_OUTPUT"
+
       - name: Download portable artifact
         uses: nick-fields/retry@v3
         with:
@@ -89,7 +113,7 @@ jobs:
             if (Test-Path "artifact\files") { Remove-Item -Recurse -Force "artifact\files" }
             New-Item -ItemType Directory -Force -Path "artifact\files" | Out-Null
 
-            $runId = "${{ github.event.workflow_run.id || github.event.inputs.run_id || github.run_id }}"
+            $runId = "${{ steps.tagrun.outputs.run_id || github.event.workflow_run.id || github.event.inputs.run_id || github.run_id }}"
             gh run download $runId `
               --repo "${{ github.repository }}" `
               --name "${{ matrix.portable_artifact }}" `
@@ -373,7 +397,7 @@ jobs:
         # the next successful build (see windows-msi-pipeline notes,
         # run 35694391567: an upstream artifact-download failure meant
         # dist\*.msi never existed for that run).
-        if: always() && hashFiles('dist/*.msi') != ''
+        if: always() && hashFiles('dist/*.msi') != '' && github.ref_type != 'tag' && github.ref_name == github.event.repository.default_branch
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
@@ -398,12 +422,21 @@ jobs:
       # create the release (it does not exist yet), it must not become the
       # repository's "Latest" release.
       - name: Upload MSI to nightly release
-        if: always() && hashFiles('dist/*.msi') != ''
+        if: always() && hashFiles('dist/*.msi') != '' && github.ref_type != 'tag' && github.ref_name == github.event.repository.default_branch
         uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ env.NIGHTLY_TAG }}
           prerelease: true
           make_latest: false
+          files: dist/*.msi
+          fail_on_unmatched_files: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload MSI to the tag release
+        if: github.ref_type == 'tag' && hashFiles('dist/*.msi') != ''
+        uses: softprops/action-gh-release@v3
+        with:
           files: dist/*.msi
           fail_on_unmatched_files: true
         env:
@@ -433,8 +466,9 @@ jobs:
   build-appimage:
     name: Linux AppImage
     if: >
-      github.event_name == 'workflow_dispatch' ||
-      github.event.workflow_run.conclusion == 'success'
+      github.ref_name == github.event.repository.default_branch &&
+      (github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success')
     uses: ./.github/workflows/linux-appimage.yml
     with:
       ref: ${{ github.event.workflow_run.head_sha || github.sha }}
@@ -463,6 +497,7 @@ jobs:
     # publish and regenerating the page would be pointless.
     if: >
       always() &&
+      github.ref_name == github.event.repository.default_branch &&
       needs.build-msi.result != 'skipped' &&
       needs.build-msi.result != 'cancelled'
     permissions:
