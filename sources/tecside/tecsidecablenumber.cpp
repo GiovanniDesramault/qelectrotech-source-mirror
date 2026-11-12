@@ -132,6 +132,23 @@ std::pair<QString, QString> fromTo(
 }
 
 /**
+	@return the two terminals of @p conductor, the one on the output
+	side first, by the same rule as fromTo
+*/
+std::pair<Terminal *, Terminal *> orderedEnds(Conductor *conductor)
+{
+	Terminal *a = conductor->terminal1;
+	Terminal *b = conductor->terminal2;
+	const int rank_a = rank(signalOf(a));
+	const int rank_b = rank(signalOf(b));
+	if (rank_a != rank_b)
+		return rank_a < rank_b ? std::make_pair(a, b)
+							   : std::make_pair(b, a);
+	return padded(locationOf(b)) < padded(locationOf(a))
+			? std::make_pair(b, a) : std::make_pair(a, b);
+}
+
+/**
 	Number the wires of @p project that ask for it. The number rides on
 	the refresh of the derived types and is written to the wire without an
 	undo step of its own, so undoing the wire takes it away as well.

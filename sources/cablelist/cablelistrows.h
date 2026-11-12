@@ -84,6 +84,17 @@ class CableList
 			/// column filled in along the way
 		static QVector<QMap<QString, QString>> rows(QETProject *project);
 
+			/// Whether any wire of the project asks for a TECside cable
+			/// number. When none does, the list is the one it always was
+		static bool hasTecsideNumbers(QETProject *project);
+
+			/// The TECside list: the line of column names, then one row
+			/// per single cable and per multicore, the cores of a
+			/// multicore indented under it. Eight columns: type, number,
+			/// and device, connector and location of both ends
+		static QStringList tecsideHeaders();
+		static QVector<QStringList> tecsideRows(QETProject *project);
+
 			/// The whole list as CSV bytes, in the format every CSV
 			/// export of this program writes (UTF-8 BOM, ';', every
 			/// field quoted): every column, every cable, the line of

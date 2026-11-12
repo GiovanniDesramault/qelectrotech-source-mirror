@@ -2455,6 +2455,10 @@ qet_add_app_test(tst_tecsideconductorprops tst_tecsideconductorprops.cpp)
 # TECside live cable numbers: TYPE-seq-from-to texts of single cables.
 qet_add_app_test(tst_tecsidecablenumber tst_tecsidecablenumber.cpp)
 
+# TECside cable list CSV: type, number and both ends, cores under
+# their multicore; a plain project's list stays as it was.
+qet_add_app_test(tst_tecsideexport tst_tecsideexport.cpp)
+
 # A wire's text at both ends (text_at_ends), and master's single middle
 # text when it is off.
 qet_add_app_test(tst_textatends tst_textatends.cpp)

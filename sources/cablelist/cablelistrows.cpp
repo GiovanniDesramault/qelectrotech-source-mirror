@@ -19,13 +19,16 @@
 
 #include <bomexport.h>
 #include <cable/cable.h>
+#include <cable/cablemanager.h>
 #include <conductorproperties.h>
 #include <diagram.h>
+#include <diagramcontext.h>
 #include <qetgraphicsitem/conductor.h>
 #include <qetgraphicsitem/element.h>
 #include <qetgraphicsitem/terminal.h>
 #include <qetinformation.h>
 #include <qetproject.h>
+#include <tecside/tecsidecablenumber.h>
 
 #include <QHash>
 #include <QLineF>
@@ -138,6 +141,28 @@ QString labelOfEnd(const CableEnd &end)
 	}
 	return end.element->elementInformations()
 			.value(QETInformation::ELMT_LABEL).toString();
+}
+
+	/// One end of a wire for the TECside list: device, connector, location
+QStringList tecsideEnd(Terminal *terminal)
+{
+	Element *element = terminal ? terminal->parentElement() : nullptr;
+	if (!element) {
+		return {QString(), terminal ? terminal->name() : QString(),
+				QString()};
+	}
+	const DiagramContext info = element->elementInformations();
+	return {info.value(QETInformation::ELMT_LABEL).toString(),
+			terminal->name(),
+			info.value(QStringLiteral("location")).toString()};
+}
+
+QStringList tecsideRow(const QString &type, const QString &number,
+					   Conductor *conductor)
+{
+	const auto ends = TecsideCableNumber::orderedEnds(conductor);
+	return QStringList{type, number} << tecsideEnd(ends.first)
+									 << tecsideEnd(ends.second);
 }
 
 } // namespace
@@ -421,6 +446,20 @@ QVector<QMap<QString, QString>> CableList::rows(QETProject *project)
 QByteArray CableList::toCsv(QETProject *project, const QStringList &keys,
 							bool include_headers)
 {
+		//A project with TECside numbers lists its cables by type and
+		//number; every other project takes the path below, unchanged
+	if (hasTecsideNumbers(project))
+	{
+		QByteArray csv("\xEF\xBB\xBF");
+		if (include_headers) {
+			csv += BomExport::csvRecord(tecsideHeaders());
+		}
+		for (const QStringList &row : tecsideRows(project)) {
+			csv += BomExport::csvRecord(row);
+		}
+		return csv;
+	}
+
 	QStringList kept;
 	for (const QString &key : keys)
 	{
@@ -465,4 +504,126 @@ QByteArray CableList::toCsv(QETProject *project, const QStringList &keys,
 QByteArray CableList::toCsv(QETProject *project)
 {
 	return toCsv(project, defaultKeys(), true);
+}
+
+/**
+	@brief CableList::hasTecsideNumbers
+	@return true when a wire of a built sheet of the project asks for a
+	TECside cable number
+*/
+bool CableList::hasTecsideNumbers(QETProject *project)
+{
+	if (!project) {
+		return false;
+	}
+	for (Diagram *diagram : project->folios())
+	{
+		if (!diagram || !diagram->isLoaded()) {
+			continue;
+		}
+		for (Conductor *conductor : diagram->conductors()) {
+			if (conductor->properties().m_tecside_number) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+/**
+	@brief CableList::tecsideHeaders
+	@return the names of the eight columns of the TECside list
+*/
+QStringList CableList::tecsideHeaders()
+{
+	return {tr("Type"), tr("Number"),
+			tr("From device"), tr("From connector"), tr("From location"),
+			tr("To device"), tr("To connector"), tr("To location")};
+}
+
+/**
+	@brief CableList::tecsideRows
+	The numbers are the ones the wires and cables carry; they are read,
+	not worked out again. Ordered by type, then number within the type,
+	single cables and multicores together as they share the counter.
+	@param project
+	@return one row of eight cells per single cable and per multicore,
+	with the rows of its cores, their type cell indented, after it
+*/
+QVector<QStringList> CableList::tecsideRows(QETProject *project)
+{
+	struct Item
+	{
+		QString type;
+		int seq = 0;
+		QString number;
+		Conductor *conductor = nullptr;
+		QList<Conductor *> cores;
+	};
+	QList<Item> items;
+	QHash<QUuid, int> cable_item;
+
+	for (Diagram *diagram : project->folios())
+	{
+		if (!diagram || !diagram->isLoaded()) {
+			continue;
+		}
+		for (Conductor *conductor : diagram->conductors())
+		{
+			const ConductorProperties p = conductor->properties();
+			if (!p.m_tecside_number
+					|| !conductor->terminal1 || !conductor->terminal2) {
+				continue;
+			}
+			Cable *cable = p.m_cable_uuid.isNull()
+					? nullptr : CableManager::cableByUuid(project, p.m_cable_uuid);
+			if (!cable) {
+				Item item;
+				item.type = p.m_type_seq_of;
+				item.seq = p.m_type_seq;
+				item.number = p.text;
+				item.conductor = conductor;
+				items.append(item);
+				continue;
+			}
+			if (!cable_item.contains(cable->uuid()))
+			{
+				Item item;
+				item.type = p.m_type_seq_of;
+				item.seq = p.m_type_seq;
+				item.number = cable->designation();
+				cable_item.insert(cable->uuid(), items.size());
+				items.append(item);
+			}
+			items[cable_item.value(cable->uuid())].cores.append(conductor);
+		}
+	}
+
+	auto slotOf = [](Conductor *c) {return c->properties().m_cable_slot;};
+	for (Item &item : items)
+	{
+		std::sort(item.cores.begin(), item.cores.end(),
+				  [&](Conductor *a, Conductor *b) {
+			return slotOf(a) < slotOf(b);
+		});
+		if (!item.cores.isEmpty()) {
+			item.conductor = item.cores.first();
+		}
+	}
+	std::sort(items.begin(), items.end(), [](const Item &a, const Item &b) {
+		if (a.type != b.type) return a.type < b.type;
+		if (a.seq != b.seq) return a.seq < b.seq;
+		return a.number < b.number;
+	});
+
+	QVector<QStringList> rows;
+	for (const Item &item : std::as_const(items))
+	{
+		rows.append(tecsideRow(item.type, item.number, item.conductor));
+		for (Conductor *core : item.cores) {
+			rows.append(tecsideRow(QStringLiteral("  "),
+								   core->properties().text, core));
+		}
+	}
+	return rows;
 }

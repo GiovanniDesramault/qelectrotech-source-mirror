@@ -24,7 +24,9 @@
 #include <QString>
 #include <utility>
 
+class Conductor;
 class QETProject;
+class Terminal;
 
 /**
 	@brief The TECside cable numbers of single cables: TYPE-seq-from-to,
@@ -39,6 +41,7 @@ namespace TecsideCableNumber
 	std::pair<QString, QString> fromTo(
 			const QString &loc1, TerminalData::Signal s1,
 			const QString &loc2, TerminalData::Signal s2);
+	std::pair<Terminal *, Terminal *> orderedEnds(Conductor *conductor);
 	void refreshProject(QETProject *project);
 }
 
