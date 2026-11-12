@@ -173,6 +173,34 @@ class tst_textatends : public QObject
 			QVERIFY(e.attribute("userx").isEmpty());
 		}
 
+		void flaggedWireKeepsBothTextsInFolioMode()
+		{
+			Rig r;
+			r.diagram->defaultConductorProperties.m_one_text_per_folio = true;
+			Conductor *c = r.wire(true);
+			c->textItem()->setVisible(true);
+				//a longer, unflagged wire of the same potential
+			Element *far = r.symbol(QStringLiteral("far"));
+			far->setPos(0, 900);
+			auto *longer = new Conductor(r.b->terminals().first(),
+										 far->terminals().first());
+			r.diagram->addItem(longer);
+			QCoreApplication::processEvents();
+			longer->calculateTextItemPosition();
+			c->calculateTextItemPosition();
+			QVERIFY(c->textItem()->isVisible());
+			QVERIFY(c->endTextItem()->isVisible());
+		}
+
+		void rotatingFirstRotatesSecond()
+		{
+			Rig r;
+			Conductor *c = r.wire(true);
+			c->textItem()->setRotation(90);
+			c->textItem()->forceRotateByUser(true);
+			QCOMPARE(c->endTextItem()->rotation(), qreal(90));
+		}
+
 		void moveElementFollows()
 		{
 			Rig r;

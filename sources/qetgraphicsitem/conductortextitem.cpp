@@ -146,7 +146,8 @@ void ConductorTextItem::forceRotateByUser(bool rotate_by_user) {
 	if (rotate_by_user == rotate_by_user_) return;
 
 	rotate_by_user_ = rotate_by_user;
-	if (!rotate_by_user && parent_conductor_) {
+	if (parent_conductor_ && (!rotate_by_user
+			|| parent_conductor_ -> properties().m_text_at_ends)) {
 		parent_conductor_ -> calculateTextItemPosition();
 	}
 	if (parent_conductor_) parent_conductor_ -> storeLayout();

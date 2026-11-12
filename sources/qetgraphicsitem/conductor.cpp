@@ -1680,6 +1680,8 @@ void Conductor::calculateTextItemPosition()
 
 			//At this point this conductor is the longest conductor we hide all text of conductor_list
 		foreach (Conductor *c, relatedPotentialConductors(false)) {
+				//A wire with its text at both ends keeps its own numbers
+			if (!c->properties().m_text_at_ends)
 					ShownKinds::setVisible(c -> textItem(), false);
 		}
 			//Make sure text item is visible, unless wire numbers are hidden
@@ -1771,6 +1773,12 @@ void Conductor::syncEndText()
 		m_text_item_end->setAcceptHoverEvents(false);
 		connect(m_text_item->document(), &QTextDocument::contentsChanged,
 				this, &Conductor::syncEndText);
+			//The second text turns with the first (rotation is animated)
+		connect(m_text_item, &QGraphicsObject::rotationChanged, this, [this]() {
+			if (m_properties.m_text_at_ends
+				&& m_text_item->wasRotatedByUser())
+				placeTextsAtEnds();
+		});
 	}
 	if (m_text_item_end->toPlainText() != m_text_item->toPlainText())
 		m_text_item_end->setPlainText(m_text_item->toPlainText());
