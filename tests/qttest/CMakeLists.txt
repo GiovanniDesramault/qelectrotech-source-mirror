@@ -2451,3 +2451,6 @@ qet_add_app_test(tst_dockpotentialtype tst_dockpotentialtype.cpp)
 # TECside cable numbering properties of a wire: XML round trip, old files
 # write nothing new, and the dock leaves mixed wires alone.
 qet_add_app_test(tst_tecsideconductorprops tst_tecsideconductorprops.cpp)
+
+# TECside live cable numbers: TYPE-seq-from-to texts of single cables.
+qet_add_app_test(tst_tecsidecablenumber tst_tecsidecablenumber.cpp)

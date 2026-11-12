@@ -21,6 +21,7 @@
 #include "container/qetcontainer.h"
 #include "container/qetcontainerdb.h"
 #include "container/qetzwriter.h"
+#include "tecside/tecsidecablenumber.h"
 #include "dataBase/qetdbfile.h"
 
 #include "ElementsCollection/xmlelementcollection.h"
@@ -5277,12 +5278,14 @@ void QETProject::refreshDerivedPotentialTypes()
 	if (m_potential_types.mode() != PotentialTypes::Mode::AtSource)
 		return;
 	QHash<QUuid, QString> derived = m_data_base.derivedPotentialTypes().type_of;
-	if (derived == m_derived_potential_types)
-		return;
-	m_derived_potential_types.swap(derived);
-	for (Diagram *diagram : folios())
-		if (diagram->isLoaded())
-			diagram->update();
+	if (derived != m_derived_potential_types) {
+		m_derived_potential_types.swap(derived);
+		for (Diagram *diagram : folios())
+			if (diagram->isLoaded())
+				diagram->update();
+	}
+		//A new wire or a new location changes numbers though no type did
+	TecsideCableNumber::refreshProject(this);
 }
 
 /**

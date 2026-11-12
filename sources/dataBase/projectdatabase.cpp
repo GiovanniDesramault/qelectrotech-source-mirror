@@ -6844,6 +6844,26 @@ int projectDataBase::placedConductorCount(const QUuid &conductor) const
 }
 
 /**
+	@brief projectDataBase::unplacedCableNumbers
+	@return the cable type and number of every numbered wire that is not
+	placed (a folio not built, a folio removed), so that a number given
+	to a placed wire does not repeat one of them
+*/
+QList<QPair<QString, int>> projectDataBase::unplacedCableNumbers() const
+{
+	QList<QPair<QString, int>> numbers;
+	for (auto it = m_conductor_properties.constBegin() ;
+		 it != m_conductor_properties.constEnd() ; ++it) {
+		const ConductorProperties &p = it.value();
+		if (p.m_tecside_number && p.m_type_seq >= 1
+				&& !p.m_type_seq_of.isEmpty()
+				&& placedConductorCount(it.key()) == 0)
+			numbers.append({p.m_type_seq_of, p.m_type_seq});
+	}
+	return numbers;
+}
+
+/**
 	@brief projectDataBase::storeConductorProperties
 	Store @p properties as the properties of the placed wire @p conductor,
 	in the conductor_properties table -- the attributes a saved wire

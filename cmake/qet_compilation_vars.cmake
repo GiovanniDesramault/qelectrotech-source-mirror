@@ -351,6 +351,8 @@ set(QET_SRC_FILES
   ${QET_DIR}/sources/gesturesettings.h
   ${QET_DIR}/sources/commandsearchpopup.cpp
   ${QET_DIR}/sources/commandsearchpopup.h
+  ${QET_DIR}/sources/tecside/tecsidecablenumber.cpp
+  ${QET_DIR}/sources/tecside/tecsidecablenumber.h
   ${QET_DIR}/sources/titleblockcell.cpp
   ${QET_DIR}/sources/titleblockcell.h
   ${QET_DIR}/sources/titleblockproperties.cpp

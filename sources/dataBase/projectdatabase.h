@@ -327,6 +327,7 @@ class projectDataBase : public QObject
 		ConductorProperties conductorProperties(const QUuid &conductor) const;
 		bool hasConductorProperties(const QUuid &conductor) const;
 		int placedConductorCount(const QUuid &conductor) const;
+		QList<QPair<QString, int>> unplacedCableNumbers() const;
 		void conductorPropertiesStored(Conductor *conductor, const ConductorProperties &properties);
 		void conductorUuidChanged(Conductor *conductor, const QUuid &old_uuid);
 		QStringList conductorPropertiesMismatches() const;
