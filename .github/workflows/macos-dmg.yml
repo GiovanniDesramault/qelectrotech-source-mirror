@@ -15,8 +15,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # macos-13 is retired: arm64 on macos-14, x86_64 on macos-15-intel
-          - runner: macos-14
+          # macos-13 is retired; macos-14 is not supported on this account: arm64 on macos-15, x86_64 on macos-15-intel
+          - runner: macos-15
             arch: arm64
           - runner: macos-15-intel
             arch: x86_64
