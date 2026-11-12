@@ -4,6 +4,7 @@ on:
   # TECside releases: v0.200.1-tecside.1, v0.200.1-tecside.2, ...
   push:
     tags: ['v*-tecside.*']
+    branches: [tecside]
   workflow_dispatch:
 
 jobs:
