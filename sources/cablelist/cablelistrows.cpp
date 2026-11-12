@@ -516,9 +516,11 @@ bool CableList::hasTecsideNumbers(QETProject *project)
 	if (!project) {
 		return false;
 	}
+		//A project opened lazily has no wires until its folios are built
+	project->loadFolios();
 	for (Diagram *diagram : project->folios())
 	{
-		if (!diagram || !diagram->isLoaded()) {
+		if (!diagram) {
 			continue;
 		}
 		for (Conductor *conductor : diagram->conductors()) {
@@ -561,18 +563,31 @@ QVector<QStringList> CableList::tecsideRows(QETProject *project)
 		QList<Conductor *> cores;
 	};
 	QList<Item> items;
+	QList<Item> unnumbered;
 	QHash<QUuid, int> cable_item;
 
+	project->loadFolios();
 	for (Diagram *diagram : project->folios())
 	{
-		if (!diagram || !diagram->isLoaded()) {
+		if (!diagram) {
 			continue;
 		}
 		for (Conductor *conductor : diagram->conductors())
 		{
 			const ConductorProperties p = conductor->properties();
-			if (!p.m_tecside_number
-					|| !conductor->terminal1 || !conductor->terminal2) {
+			if (!conductor->terminal1 || !conductor->terminal2) {
+				continue;
+			}
+			if (!p.m_tecside_number)
+			{
+					//Listed all the same, without a number
+				Item item;
+				item.type = p.m_potential_type.isEmpty()
+						? project->derivedPotentialType(conductor->uuid())
+						: p.m_potential_type;
+				item.number = conductor->uuid().toString();
+				item.conductor = conductor;
+				unnumbered.append(item);
 				continue;
 			}
 			Cable *cable = p.m_cable_uuid.isNull()
@@ -616,6 +631,12 @@ QVector<QStringList> CableList::tecsideRows(QETProject *project)
 		return a.number < b.number;
 	});
 
+	std::sort(unnumbered.begin(), unnumbered.end(),
+			  [](const Item &a, const Item &b) {
+		if (a.type != b.type) return a.type < b.type;
+		return a.number < b.number;
+	});
+
 	QVector<QStringList> rows;
 	for (const Item &item : std::as_const(items))
 	{
@@ -624,6 +645,9 @@ QVector<QStringList> CableList::tecsideRows(QETProject *project)
 			rows.append(tecsideRow(QStringLiteral("  "),
 								   core->properties().text, core));
 		}
+	}
+	for (const Item &item : std::as_const(unnumbered)) {
+		rows.append(tecsideRow(item.type, QString(), item.conductor));
 	}
 	return rows;
 }

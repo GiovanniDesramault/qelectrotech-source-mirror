@@ -258,6 +258,43 @@ class tst_tecsideexport : public QObject
 				QStringLiteral("AUD-002-03-07/12")));
 		}
 
+		void unnumberedWiresStillListed()
+		{
+			Rig r(3);
+			setLabel(r.camera, QStringLiteral("CAM1"));
+			setLabel(r.switcher, QStringLiteral("SW1"));
+			r.drawAs(r.out(0), r.in(0), QStringLiteral("AUD"));
+			r.draw(r.out(1), r.in(1), false);
+			const QStringList rows = lines(CableList::toCsv(&r.project));
+			QCOMPARE(rows.size(), 3);
+			QVERIFY(rows.at(1).contains(QStringLiteral("AUD-001-03-07")));
+			const QStringList cells = rows.at(2).split(QLatin1Char(';'));
+			QCOMPARE(cells.at(1), QStringLiteral("\"\""));
+			QCOMPARE(cells.at(2), QStringLiteral("\"CAM1\""));
+			QCOMPARE(cells.at(5), QStringLiteral("\"SW1\""));
+		}
+
+		void lazyProjectExportsAllCables()
+		{
+			QTemporaryDir dir;
+			QVERIFY(dir.isValid());
+			const QString path = dir.filePath(QStringLiteral("p.qet"));
+			QByteArray expected;
+			{
+				Rig r(3);
+				setLabel(r.camera, QStringLiteral("CAM1"));
+				setLabel(r.switcher, QStringLiteral("SW1"));
+				r.drawAs(r.out(0), r.in(0), QStringLiteral("AUD"));
+				r.drawAs(r.out(1), r.in(1), QStringLiteral("SDI"));
+				expected = CableList::toCsv(&r.project);
+				QCOMPARE(lines(expected).size(), 3);
+				r.project.setFilePath(path);
+				QVERIFY(r.project.write().isOk());
+			}
+			QETProject reopened(path);
+			QCOMPARE(CableList::toCsv(&reopened), expected);
+		}
+
 		void plainProjectIsUnchanged()
 		{
 			Rig r(5);
