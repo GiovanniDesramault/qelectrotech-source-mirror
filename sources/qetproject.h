@@ -345,6 +345,10 @@ class QETProject : public QObject
 			/// The type @p wire takes from the source terminals of its
 			/// potential, in the mode that draws from them; empty otherwise
 		QString derivedPotentialType(const QUuid &wire);
+			/// The (type, number) each wire held at the last refresh of the
+			/// cable numbers, see TecsideCableNumber::refreshProject()
+		QHash<QUuid, QPair<QString, int>> &cableNumberMemory()
+		{return m_cable_number_memory;}
 			/// Work the types from the sources out again once control
 			/// returns, or at the next derivedPotentialType(): after an
 			/// edit, a new list or mode, or opening. Nothing in other modes.
@@ -675,6 +679,7 @@ class QETProject : public QObject
 			/// The types wires take from the sources, see derivedPotentialType()
 		QHash<QUuid, QString> m_derived_potential_types;
 		bool m_derived_potential_types_due = false;
+		QHash<QUuid, QPair<QString, int>> m_cable_number_memory;
 		void refreshDerivedPotentialTypes();
 		bool m_chained_reports = false;
 		bool m_has_chained_reports_attribute = false;

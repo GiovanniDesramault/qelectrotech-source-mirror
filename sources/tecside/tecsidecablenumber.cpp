@@ -148,8 +148,13 @@ void refreshProject(QETProject *project)
 		for (const auto &number : store->unplacedCableNumbers())
 			used[number.first].insert(number.second);
 
-		//Who keeps a number several wires hold: the lowest uuid
+		//Who keeps a number several wires hold: the one that held it at
+		//the last refresh (a copy never takes it from its original), the
+		//lowest uuid when none or several did
+	auto &memory = project->cableNumberMemory();
 	QMap<QPair<QString, int>, QString> keeper;
+	QMap<QPair<QString, int>, QString> previous;
+	QSet<QPair<QString, int>> several;
 	const auto held = [](const Wire &w) {
 		return !w.type.isEmpty() && w.properties.m_type_seq >= 1
 				&& w.properties.m_type_seq_of == w.type;
@@ -162,7 +167,14 @@ void refreshProject(QETProject *project)
 		const auto known = keeper.constFind(key);
 		if (known == keeper.constEnd() || uuid < *known)
 			keeper.insert(key, uuid);
+		if (memory.value(w.conductor->uuid()) == key) {
+			if (previous.contains(key)) several.insert(key);
+			previous.insert(key, uuid);
+		}
 	}
+	for (auto it = previous.constBegin() ; it != previous.constEnd() ; ++it)
+		if (!several.contains(it.key()))
+			keeper.insert(it.key(), it.value());
 	for (Wire &w : wires) {
 		if (!held(w)) continue;
 		w.keeps = keeper.value({w.type, w.properties.m_type_seq})
@@ -191,6 +203,10 @@ void refreshProject(QETProject *project)
 		}
 			//A formula would write the text again
 		p.m_formula.clear();
+		if (p.m_type_seq >= 1 && !w.type.isEmpty())
+			memory.insert(w.conductor->uuid(), {w.type, p.m_type_seq});
+		else
+			memory.remove(w.conductor->uuid());
 		if (p == w.properties) continue;
 		w.conductor->setProperties(p);
 	}

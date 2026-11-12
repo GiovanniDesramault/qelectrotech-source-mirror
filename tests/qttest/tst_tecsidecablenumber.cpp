@@ -326,6 +326,36 @@ class tst_tecsidecablenumber : public QObject
 			QCOMPARE(c->properties().text, QStringLiteral("SDI-001-04-07"));
 		}
 
+		void pastedCopyGetsNewNumber()
+		{
+			Rig r;
+			Conductor *original = r.draw(r.out(0), r.in(0));
+			QCOMPARE(original->properties().text,
+					 QStringLiteral("SDI-001-03-07"));
+				//A copy whose uuid sorts lower than the original's
+			Conductor *copy = nullptr;
+			for (int i = 0 ; i < 200 && !copy ; ++i) {
+				auto *c = new Conductor(r.out(1), r.in(1));
+				if (c->uuid().toString() < original->uuid().toString())
+					copy = c;
+				else
+					delete c;
+			}
+			QVERIFY(copy);
+			ConductorProperties p = copy->properties();
+			p.m_tecside_number = true;
+			p.m_type_seq = 1;
+			p.m_type_seq_of = QStringLiteral("SDI");
+			copy->setProperties(p);
+			r.diagram->undoStack().push(
+				new AddGraphicsObjectCommand(copy, r.diagram, QPointF()));
+			r.settle();
+			QCOMPARE(original->properties().text,
+					 QStringLiteral("SDI-001-03-07"));
+			QCOMPARE(copy->properties().text,
+					 QStringLiteral("SDI-002-03-07"));
+		}
+
 		void duplicateSeqIsReassigned()
 		{
 			Rig r;
