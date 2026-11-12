@@ -23,6 +23,10 @@
 #include "qetgraphicsitem/element.h"
 #include "qetgraphicsitem/terminal.h"
 #include "qetproject.h"
+#include "undocommand/addgraphicsobjectcommand.h"
+
+#include <QDomDocument>
+#include <QTemporaryDir>
 
 #include <QSqlQuery>
 #include <QtTest>
@@ -83,7 +87,92 @@ class tst_symbolpotentialsources : public QObject
 		return query.exec() && query.numRowsAffected() == 1;
 	}
 
+		//The type and the signal a terminal row holds
+	static QStringList rowOf(QETProject &project, Terminal *t)
+	{
+		QSqlQuery query(project.dataBase()->database());
+		query.prepare(QStringLiteral(
+			"SELECT potential_type, signal FROM terminal "
+			"WHERE uuid = :uuid AND element_uuid = :element"));
+		query.bindValue(QStringLiteral(":uuid"), t->stableUuid().toString());
+		query.bindValue(QStringLiteral(":element"),
+						t->parentElement()->uuid().toString());
+		if (!query.exec() || !query.next()) return {};
+		return {query.value(0).toString(), query.value(1).toString()};
+	}
+
+	QTemporaryDir m_dir;
+
 	private slots:
+		/// The symbol's own <terminal> attributes reach the terminal table,
+		/// whether the project is opened or a wire is drawn afterwards, and
+		/// type the wire: no UPDATE of the table here
+		void definitionAttributesReachTheTable()
+		{
+			QFile in(QFINDTESTDATA("fixtures/every_feature.qet"));
+			QVERIFY(in.open(QIODevice::ReadOnly));
+			QDomDocument document;
+			QVERIFY(document.setContent(&in));
+			in.close();
+			int count = 0;
+			const QDomNodeList terminals = document.elementsByTagName(
+				QStringLiteral("terminal"));
+			for (int i = 0 ; i < terminals.size() ; ++i) {
+				QDomElement t = terminals.at(i).toElement();
+				if (t.parentNode().nodeName() != QLatin1String("description"))
+					continue;
+				t.setAttribute(QStringLiteral("potential_type"),
+							   QStringLiteral("SDI"));
+				t.setAttribute(QStringLiteral("signal"),
+							   count++ % 2 ? "in" : "out");
+			}
+			QVERIFY(count > 0);
+			const QString path = m_dir.filePath(QStringLiteral("defaults.qet"));
+			QFile out(path);
+			QVERIFY(out.open(QIODevice::WriteOnly));
+			out.write(document.toByteArray());
+			out.close();
+
+			QETProject project(path);
+			project.setPotentialTypes(types(PotentialTypes::Mode::AtSource));
+			Conductor *c = wire(project);
+			QVERIFY(c);
+				//Opened: the document path
+			for (Terminal *t : {c->terminal1, c->terminal2}) {
+				const QStringList row = rowOf(project, t);
+				QCOMPARE(row.value(0), QStringLiteral("SDI"));
+				QVERIFY(row.value(1) == QLatin1String("out")
+						|| row.value(1) == QLatin1String("in"));
+				QCOMPARE(row.value(1), t->signalName());
+			}
+			QCOMPARE(project.dataBase()->derivedPotentialTypes()
+					 .type_of.value(c->uuid()), QStringLiteral("SDI"));
+
+				//Drawn: the live path
+			Terminal *ends[2] = {nullptr, nullptr};
+			Diagram *folio = c->diagram();
+			for (Element *e : folio->elements()) {
+				for (Terminal *t : e->terminals()) {
+					if (!t->conductors().isEmpty()) continue;
+					if (!ends[0]) { ends[0] = t; break; }
+					if (ends[0]->parentElement() != e) { ends[1] = t; break; }
+				}
+				if (ends[1]) break;
+			}
+			QVERIFY(ends[0] && ends[1]);
+			auto *drawn = new Conductor(ends[0], ends[1]);
+			folio->undoStack().push(
+				new AddGraphicsObjectCommand(drawn, folio, QPointF()));
+			for (Terminal *t : ends) {
+				const QStringList row = rowOf(project, t);
+				QCOMPARE(row.value(0), QStringLiteral("SDI"));
+				QVERIFY(!t->signalName().isEmpty());
+				QCOMPARE(row.value(1), t->signalName());
+			}
+			QCOMPARE(project.dataBase()->derivedPotentialTypes()
+					 .type_of.value(drawn->uuid()), QStringLiteral("SDI"));
+		}
+
 		void symbolDefaultTypesTheWire()
 		{
 			QETProject project(QFINDTESTDATA("fixtures/every_feature.qet"));
