@@ -84,6 +84,7 @@ class Conductor : public QGraphicsObject
 		int type() const override { return Type; }
 		Diagram *diagram() const;
 		ConductorTextItem *textItem() const;
+		ConductorTextItem *endTextItem() const;
 		QUuid uuid() const {return m_uuid;}
 		void newUuid();	//create new uuid for this conductor
 		void setUuid(const QUuid &uuid);	//saved from now on
@@ -160,6 +161,8 @@ class Conductor : public QGraphicsObject
 		void setProfiles(const ConductorProfilesGroup &);
 		ConductorProfilesGroup profiles() const;
 		void calculateTextItemPosition();
+		void placeTextsAtEnds();
+		void syncEndText();
 		void updateDefinitionMark();
 		QList<Conductor *> cornerChain();
 		void updateTextVisibility();
@@ -247,6 +250,9 @@ class Conductor : public QGraphicsObject
 		ConductorProperties m_properties;
 			/// Text input for non simple, non-singleline conductors
 		ConductorTextItem *m_text_item;
+			/// Second copy of the text near terminal2, only used while
+			/// the properties ask for the text at both ends
+		ConductorTextItem *m_text_item_end = nullptr;
 		ConductorDefinitionMark *m_definition_mark = nullptr;
 			/// Segments composing the conductor
 		ConductorSegment *segments;

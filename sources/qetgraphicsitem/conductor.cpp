@@ -734,6 +734,15 @@ ConductorTextItem *Conductor::textItem() const
 }
 
 /**
+	@return the second text, near terminal2, or nullptr if this wire never
+	showed its text at both ends
+*/
+ConductorTextItem *Conductor::endTextItem() const
+{
+	return(m_text_item_end);
+}
+
+/**
 	Methode de validation d'element XML
 	@param e Un element XML sense represente un Conducteur
 	@return true si l'element XML represente bien un Conducteur ; false sinon
@@ -1606,6 +1615,10 @@ void Conductor::updateTextVisibility()
 						   && m_properties.m_show_text
 						   && !hidesPlaceholder()
 						   && !markReplacesText());
+	if (m_text_item_end)
+		ShownKinds::setVisible(m_text_item_end,
+							   m_properties.m_text_at_ends
+							   && m_text_item->isVisible());
 }
 
 /**
@@ -1644,6 +1657,12 @@ void Conductor::calculateTextItemPosition()
 	updateDefinitionMark();
 	if (!m_text_item || !diagram() || m_properties.type != ConductorProperties::Multi)
 		return;
+
+	if (m_properties.m_text_at_ends)
+	{
+		placeTextsAtEnds();
+		return;
+	}
 
 	if (diagram() -> defaultConductorProperties.m_one_text_per_folio == true &&
 		relatedPotentialConductors(false).size() > 0)
@@ -1731,6 +1750,90 @@ void Conductor::calculateTextItemPosition()
 			}
 		}
 	}
+}
+
+/**
+	@brief Conductor::syncEndText
+	Make the second text a copy of the first: text, font and colour. It is
+	created the first time the wire asks for its text at both ends.
+*/
+void Conductor::syncEndText()
+{
+	if (!m_text_item || !m_properties.m_text_at_ends)
+		return;
+	if (!m_text_item_end)
+	{
+		m_text_item_end = new ConductorTextItem(m_text_item->toPlainText(), this);
+			//Only a copy of the first text: the user edits and moves that one
+		m_text_item_end->setFlags(QGraphicsItem::ItemSendsGeometryChanges);
+		m_text_item_end->setTextInteractionFlags(Qt::NoTextInteraction);
+		m_text_item_end->setAcceptedMouseButtons(Qt::NoButton);
+		m_text_item_end->setAcceptHoverEvents(false);
+		connect(m_text_item->document(), &QTextDocument::contentsChanged,
+				this, &Conductor::syncEndText);
+	}
+	if (m_text_item_end->toPlainText() != m_text_item->toPlainText())
+		m_text_item_end->setPlainText(m_text_item->toPlainText());
+	if (m_text_item_end->font() != m_text_item->font())
+		m_text_item_end->setFont(m_text_item->font());
+	if (m_text_item_end->defaultTextColor() != m_text_item->defaultTextColor())
+		m_text_item_end->setDefaultTextColor(m_text_item->defaultTextColor());
+}
+
+/**
+	@brief Conductor::placeTextsAtEnds
+	Put the first text beside terminal1 and the second beside terminal2,
+	along the first and the last segment, 4 px from the terminal, rotated
+	like that segment. A first text moved by the user stays where it is.
+*/
+void Conductor::placeTextsAtEnds()
+{
+	syncEndText();
+	if (!m_text_item_end || !segments)
+		return;
+
+		//The first and the last segment that go somewhere
+	ConductorSegment *first = segments;
+	while (first->isPoint() && first->hasNextSegment())
+		first = first->nextSegment();
+	ConductorSegment *last = segments;
+	while (last->hasNextSegment())
+		last = last->nextSegment();
+	while (last->isPoint() && last->hasPreviousSegment())
+		last = last->previousSegment();
+
+	auto place = [this](ConductorTextItem *item, const QPointF &terminal,
+						const QPointF &inwards, bool horizontal) {
+		if (!item->wasRotatedByUser())
+			item->setRotation(horizontal ? m_properties.horiz_rotate_text
+										 : m_properties.verti_rotate_text);
+		item->setPos(0, 0);
+		const QRectF r = item->mapRectToParent(item->boundingRect());
+		QPointF top_left;
+		if (horizontal)
+		{
+			top_left.setX(inwards.x() >= terminal.x()
+						  ? terminal.x() + 4 : terminal.x() - 4 - r.width());
+			top_left.setY(terminal.y() - r.height());
+		}
+		else
+		{
+			top_left.setX(terminal.x() + 2);
+			top_left.setY(inwards.y() >= terminal.y()
+						  ? terminal.y() + 4 : terminal.y() - 4 - r.height());
+		}
+		item->setPos(top_left - r.topLeft());
+	};
+
+	if (!m_text_item->wasMovedByUser())
+		place(m_text_item, first->firstPoint(), first->secondPoint(),
+			  first->isHorizontal());
+	m_text_item_end->forceRotateByUser(m_text_item->wasRotatedByUser());
+	if (m_text_item->wasRotatedByUser())
+		m_text_item_end->setRotation(m_text_item->rotation());
+	place(m_text_item_end, last->secondPoint(), last->firstPoint(),
+		  last->isHorizontal());
+	ShownKinds::setVisible(m_text_item_end, m_text_item->isVisible());
 }
 
 /**
@@ -2004,6 +2107,7 @@ void Conductor::setProperties(const ConductorProperties &property)
 	m_text_item->setFont(font);
 	m_text_item->setColor(m_properties.text_color);
 
+	syncEndText();
 	updateTextVisibility();
 	calculateTextItemPosition();
 	for (Conductor *c : old_run)
