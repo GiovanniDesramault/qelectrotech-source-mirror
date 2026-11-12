@@ -264,6 +264,26 @@
                 </property>
                </widget>
               </item>
+              <item row="11" column="0" colspan="5">
+               <widget class="QCheckBox" name="m_tecside_number_cb">
+                <property name="toolTip">
+                 <string>Number the wire from the type of its cable instead of the text typed above.</string>
+                </property>
+                <property name="text">
+                 <string>TECside cable number</string>
+                </property>
+               </widget>
+              </item>
+              <item row="12" column="0" colspan="5">
+               <widget class="QCheckBox" name="m_text_at_ends_cb">
+                <property name="toolTip">
+                 <string>Draw the wire's text at both of its ends.</string>
+                </property>
+                <property name="text">
+                 <string>Number at both ends</string>
+                </property>
+               </widget>
+              </item>
               <item row="8" column="0" colspan="5">
                <layout class="QGridLayout" name="m_text_angle_gl">
                 <item row="1" column="0">
@@ -833,6 +853,8 @@
   <tabstop>m_formula_le</tabstop>
   <tabstop>m_text_le</tabstop>
   <tabstop>m_show_text_cb</tabstop>
+  <tabstop>m_tecside_number_cb</tabstop>
+  <tabstop>m_text_at_ends_cb</tabstop>
   <tabstop>m_text_color_kpb</tabstop>
   <tabstop>m_available_autonum_cb</tabstop>
   <tabstop>m_edit_autonum_pb</tabstop>

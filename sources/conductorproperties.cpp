@@ -337,6 +337,15 @@ QList<QPair<QString, QString>> ConductorProperties::attributes() const
 		//is saved exactly as before
 	if (!m_potential_type.isEmpty())
 		add("potential_type", m_potential_type);
+		//Only written when set, so an older project is saved as it was
+	if (m_tecside_number)
+		add("tecside_number", QString::number(1));
+	if (m_text_at_ends)
+		add("text_at_ends", QString::number(1));
+	if (m_type_seq >= 0)
+		add("type_seq", QString::number(m_type_seq));
+	if (!m_type_seq_of.isEmpty())
+		add("type_seq_of", m_type_seq_of);
 	add("tension_protocol", m_tension_protocol);
 	add("conductor_color", m_wire_color);
 	add("conductor_section", m_wire_section);
@@ -420,6 +429,10 @@ void ConductorProperties::fromXml(QDomElement &e)
 	m_bus                = e.attribute("bus");
 	m_function           = e.attribute("function");
 	m_potential_type     = e.attribute("potential_type");
+	m_tecside_number     = e.attribute("tecside_number").toInt() == 1;
+	m_text_at_ends       = e.attribute("text_at_ends").toInt() == 1;
+	m_type_seq           = e.attribute("type_seq", QString::number(-1)).toInt();
+	m_type_seq_of        = e.attribute("type_seq_of");
 	m_tension_protocol   = e.attribute("tension_protocol");
 	m_wire_color         = e.attribute("conductor_color");
 	m_wire_section       = e.attribute("conductor_section");
@@ -593,6 +606,10 @@ void ConductorProperties::applyForEqualAttributes(QList<ConductorProperties> lis
 		m_bus                = cp.m_bus;
 		m_function           = cp.m_function;
 		m_potential_type     = cp.m_potential_type;
+		m_tecside_number     = cp.m_tecside_number;
+		m_text_at_ends       = cp.m_text_at_ends;
+		m_type_seq           = cp.m_type_seq;
+		m_type_seq_of        = cp.m_type_seq_of;
 		m_tension_protocol   = cp.m_tension_protocol;
 		m_wire_color         = cp.m_wire_color;
 		m_wire_section       = cp.m_wire_section;
@@ -768,6 +785,42 @@ void ConductorProperties::applyForEqualAttributes(QList<ConductorProperties> lis
 	}
 	if (equal)
 		m_potential_type = s_value;
+	equal = true;
+
+		//TECside number, text at both ends
+	b_value = clist.first().m_tecside_number;
+	for(ConductorProperties cp : clist)
+	{
+		if (cp.m_tecside_number != b_value)
+			equal = false;
+	}
+	if (equal)
+		m_tecside_number = b_value;
+	equal = true;
+
+	b_value = clist.first().m_text_at_ends;
+	for(ConductorProperties cp : clist)
+	{
+		if (cp.m_text_at_ends != b_value)
+			equal = false;
+	}
+	if (equal)
+		m_text_at_ends = b_value;
+	equal = true;
+
+		//Sequence in the cable type
+	i_value = clist.first().m_type_seq;
+	s_value = clist.first().m_type_seq_of;
+	for(ConductorProperties cp : clist)
+	{
+		if (cp.m_type_seq != i_value || cp.m_type_seq_of != s_value)
+			equal = false;
+	}
+	if (equal)
+	{
+		m_type_seq = i_value;
+		m_type_seq_of = s_value;
+	}
 	equal = true;
 
 		//Tension protocol
@@ -971,6 +1024,10 @@ void ConductorProperties::applyChanges(const ConductorProperties &before,
 	take(m_bus,                  before.m_bus,                  after.m_bus);
 	take(m_function,             before.m_function,             after.m_function);
 	take(m_potential_type,       before.m_potential_type,       after.m_potential_type);
+	take(m_tecside_number,       before.m_tecside_number,       after.m_tecside_number);
+	take(m_text_at_ends,         before.m_text_at_ends,         after.m_text_at_ends);
+	take(m_type_seq,             before.m_type_seq,             after.m_type_seq);
+	take(m_type_seq_of,          before.m_type_seq_of,          after.m_type_seq_of);
 	take(m_tension_protocol,     before.m_tension_protocol,     after.m_tension_protocol);
 	take(m_wire_color,           before.m_wire_color,           after.m_wire_color);
 	take(m_wire_section,         before.m_wire_section,         after.m_wire_section);
@@ -1060,6 +1117,10 @@ bool ConductorProperties::operator==(const ConductorProperties &other) const
 		other.m_bus == m_bus &&\
 		other.m_function == m_function &&\
 		other.m_potential_type == m_potential_type &&\
+		other.m_tecside_number == m_tecside_number &&\
+		other.m_text_at_ends == m_text_at_ends &&\
+		other.m_type_seq == m_type_seq &&\
+		other.m_type_seq_of == m_type_seq_of &&\
 		other.m_tension_protocol == m_tension_protocol &&\
 		other.m_wire_color == m_wire_color && \
 		other.m_wire_section == m_wire_section && \

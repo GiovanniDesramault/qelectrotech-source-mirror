@@ -294,10 +294,19 @@ void ConductorPropertiesEditorWidget::connectChangeSignals()
 		add(connect(w, QOverload<>::of(&QTextOrientationSpinBoxWidget::editingFinished),
 					this, &ConductorPropertiesEditorWidget::apply));
 	// Checkboxes and the checkable group boxes (single/multi wire, bicolor…).
-	for (auto *w : m_cpw->findChildren<QAbstractButton *>())
-		if (w->isCheckable())
+	for (auto *w : m_cpw->findChildren<QAbstractButton *>()) {
+		if (!w->isCheckable())
+			continue;
+			//The TECside boxes can be partially checked, which a click
+			//leaves without toggling: they apply on the click itself
+		if (w->objectName() == QLatin1String("m_tecside_number_cb")
+				|| w->objectName() == QLatin1String("m_text_at_ends_cb"))
+			add(connect(w, &QAbstractButton::clicked,
+						this, &ConductorPropertiesEditorWidget::apply));
+		else
 			add(connect(w, &QAbstractButton::toggled,
 						this, &ConductorPropertiesEditorWidget::apply));
+	}
 	for (auto *w : m_cpw->findChildren<QGroupBox *>())
 		if (w->isCheckable())
 			add(connect(w, &QGroupBox::toggled,
@@ -354,6 +363,12 @@ void ConductorPropertiesEditorWidget::updateUi()
 		m_cpw->setPotentialTypes(m_project->potentialTypes());
 	m_cpw->setProperties(shown);
 	m_cpw->setMixedTextFields(mixed);
+	bool mixed_number = false, mixed_ends = false;
+	for (const ConductorProperties &properties : std::as_const(list)) {
+		mixed_number |= properties.m_tecside_number != list.first().m_tecside_number;
+		mixed_ends |= properties.m_text_at_ends != list.first().m_text_at_ends;
+	}
+	m_cpw->setMixedTecsideFlags(mixed_number, mixed_ends);
 	m_cpw->setTextLocked(list.size() > 1);
 		//Read back rather than keep the conductor's own values: a value the
 		//widget cannot show exactly must not count as an edit.

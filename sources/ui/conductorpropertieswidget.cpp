@@ -22,6 +22,7 @@
 #include <qtextorientationspinboxwidget.h>
 #include "ui_conductorpropertieswidget.h"
 
+#include <QCheckBox>
 #include <QIcon>
 #include <QPainter>
 #include <QPixmap>
@@ -104,6 +105,12 @@ void ConductorPropertiesWidget::setProperties(
 	ui->m_text_size_sb          -> setValue   (m_properties.text_size);
 	ui->m_cond_size_sb          -> setValue   (m_properties.cond_size);
 	ui->m_show_text_cb          -> setChecked (m_properties.m_show_text);
+		//A new load shows plain boxes: setMixedTecsideFlags() asks for the
+		//partial state afterwards
+	for (QCheckBox *cb : {ui->m_tecside_number_cb, ui->m_text_at_ends_cb})
+		cb->setTristate(false);
+	ui->m_tecside_number_cb     -> setChecked (m_properties.m_tecside_number);
+	ui->m_text_at_ends_cb       -> setChecked (m_properties.m_text_at_ends);
 	ui->m_one_text_per_folio_cb -> setChecked (m_properties.m_one_text_per_folio);
 	ui->m_definition_mark_cb    -> setChecked (m_properties.m_definition_mark);
 	ui->m_definition_mark_hides_text_cb -> setChecked (m_properties.m_definition_mark_hides_text);
@@ -195,6 +202,16 @@ ConductorProperties ConductorPropertiesWidget::properties() const
 	properties_.text_size               = ui -> m_text_size_sb -> value();
 	properties_.cond_size               = ui -> m_cond_size_sb -> value();
 	properties_.m_show_text             = ui -> m_show_text_cb -> isChecked();
+		//A box still partially checked is the selected wires disagreeing:
+		//it keeps what was shown until it is clicked
+	properties_.m_tecside_number        = ui->m_tecside_number_cb->checkState() == Qt::PartiallyChecked
+			? m_properties.m_tecside_number
+			: ui->m_tecside_number_cb->isChecked();
+	properties_.m_text_at_ends          = ui->m_text_at_ends_cb->checkState() == Qt::PartiallyChecked
+			? m_properties.m_text_at_ends
+			: ui->m_text_at_ends_cb->isChecked();
+	properties_.m_type_seq              = m_properties.m_type_seq;
+	properties_.m_type_seq_of           = m_properties.m_type_seq_of;
 	properties_.m_one_text_per_folio    = ui -> m_one_text_per_folio_cb -> isChecked();
 	properties_.m_definition_mark       = ui -> m_definition_mark_cb -> isChecked();
 	properties_.m_definition_mark_hides_text = ui -> m_definition_mark_hides_text_cb -> isChecked();
@@ -267,6 +284,30 @@ void ConductorPropertiesWidget::setPotentialTypes(const PotentialTypes &types)
 	selectPotentialType(m_properties.m_potential_type);
 	ui->m_potential_type_cb->setVisible(shown);
 	ui->m_potential_type_label->setVisible(shown);
+}
+
+/**
+	@brief ConductorPropertiesWidget::setMixedTecsideFlags
+	Show the TECside boxes the selected conductors disagree on as partially
+	checked. They change nothing until clicked, and a click leaves the
+	partial state for good.
+	@param number : the conductors differ on the TECside number
+	@param at_ends : the conductors differ on the text at both ends
+*/
+void ConductorPropertiesWidget::setMixedTecsideFlags(bool number, bool at_ends)
+{
+	const auto apply = [](QCheckBox *cb, bool mixed, bool &shown) {
+		cb->setTristate(mixed);
+		if (mixed) {
+				//The first click then always differs from what was shown
+			shown = false;
+			cb->setCheckState(Qt::PartiallyChecked);
+		} else if (cb->checkState() == Qt::PartiallyChecked) {
+			cb->setCheckState(shown ? Qt::Checked : Qt::Unchecked);
+		}
+	};
+	apply(ui->m_tecside_number_cb, number, m_properties.m_tecside_number);
+	apply(ui->m_text_at_ends_cb, at_ends, m_properties.m_text_at_ends);
 }
 
 /**
@@ -394,6 +435,11 @@ QPushButton *ConductorPropertiesWidget::editAutonumPushButton() const
 */
 void ConductorPropertiesWidget::initWidget()
 {
+		//Once clicked, a box leaves the partial state for good
+	for (QCheckBox *cb : {ui->m_tecside_number_cb, ui->m_text_at_ends_cb})
+		connect(cb, &QCheckBox::clicked, cb, [cb]() {
+			cb->setTristate(false);
+		});
 		//Shown by setPotentialTypes(), for a project that draws from them
 	ui->m_potential_type_cb->hide();
 	ui->m_potential_type_label->hide();

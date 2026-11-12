@@ -116,6 +116,17 @@ class ConductorProperties
 			/// Which core of that cable this conductor shows, -1 when none
 		int m_cable_slot = -1;
 
+			/// TECside numbering: the wire's number is worked out from
+			/// its cable type (see m_type_seq) and not typed in
+		bool m_tecside_number = false;
+			/// The text is drawn at both ends of the wire
+		bool m_text_at_ends = false;
+			/// Position of this wire among those of the same cable type,
+			/// -1 when it has none yet
+		int m_type_seq = -1;
+			/// The cable type m_type_seq counts in
+		QString m_type_seq_of;
+
 		int
 		text_size,
 		m_dash_size = 1;

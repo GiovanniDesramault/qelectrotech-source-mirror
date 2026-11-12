@@ -2447,3 +2447,7 @@ qet_add_app_test(tst_symbolpotentialsources tst_symbolpotentialsources.cpp)
 # The Selection properties dock offers the potential types to the wires
 # it edits, and shows a blank choice when they disagree.
 qet_add_app_test(tst_dockpotentialtype tst_dockpotentialtype.cpp)
+
+# TECside cable numbering properties of a wire: XML round trip, old files
+# write nothing new, and the dock leaves mixed wires alone.
+qet_add_app_test(tst_tecsideconductorprops tst_tecsideconductorprops.cpp)
