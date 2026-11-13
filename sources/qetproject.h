@@ -679,6 +679,8 @@ class QETProject : public QObject
 			/// The types wires take from the sources, see derivedPotentialType()
 		QHash<QUuid, QString> m_derived_potential_types;
 		bool m_derived_potential_types_due = false;
+			/// The cable numbers wait for the queued refresh
+		bool m_cable_numbers_due = false;
 		QHash<QUuid, QPair<QString, int>> m_cable_number_memory;
 		void refreshDerivedPotentialTypes();
 		bool m_chained_reports = false;

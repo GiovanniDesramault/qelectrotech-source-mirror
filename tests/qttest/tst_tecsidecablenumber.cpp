@@ -443,6 +443,25 @@ class tst_tecsidecablenumber : public QObject
 			}
 		}
 
+		void typeLookupDoesNotNumber()
+		{
+				//derivedPotentialType() may run while a folio is drawn:
+				//it works the types out, the numbers wait for the queued
+				//refresh
+			Rig r;
+			auto *c = new Conductor(r.out(0), r.in(0));
+			ConductorProperties p = c->properties();
+			p.m_tecside_number = true;
+			c->setProperties(p);
+			r.diagram->undoStack().push(
+				new AddGraphicsObjectCommand(c, r.diagram, QPointF()));
+			QCOMPARE(r.project.derivedPotentialType(c->uuid()),
+					 QStringLiteral("SDI"));
+			QCOMPARE(c->properties().m_type_seq, -1);
+			r.settle();
+			QCOMPARE(c->properties().text, QStringLiteral("SDI-001-03-07"));
+		}
+
 		void duplicateSeqIsReassigned()
 		{
 			Rig r;

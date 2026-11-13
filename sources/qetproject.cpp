@@ -5260,13 +5260,23 @@ void QETProject::scheduleDerivedPotentialTypes()
 		m_derived_potential_types_due = false;
 		return;
 	}
-	if (m_derived_potential_types_due)
-		return;
 	m_derived_potential_types_due = true;
-		//Several edits in a row (a paste, a script) are worked out once
+	if (m_cable_numbers_due)
+		return;
+	m_cable_numbers_due = true;
+		//Several edits in a row (a paste, a script) are worked out once.
+		//The cable numbers are worked out here only, never in the
+		//refresh derivedPotentialType() may run while a folio is drawn
 	QTimer::singleShot(0, this, [this]() {
 		if (m_derived_potential_types_due)
 			refreshDerivedPotentialTypes();
+		if (!m_cable_numbers_due)
+			return;
+		m_cable_numbers_due = false;
+		if (m_potential_types.mode() == PotentialTypes::Mode::AtSource)
+				//A new wire or a new location changes numbers though
+				//no type did
+			TecsideCableNumber::refreshProject(this);
 	});
 }
 
@@ -5274,7 +5284,9 @@ void QETProject::scheduleDerivedPotentialTypes()
 	@brief QETProject::refreshDerivedPotentialTypes
 	One pass over the project database (projectDataBase::derivedPotentialTypes()),
 	never over the folios; the folios built are drawn again only when a
-	wire's derived type changed.
+	wire's derived type changed. The types only: the cable numbers follow
+	once control returns (scheduleDerivedPotentialTypes()), as this may
+	run while a folio is drawn.
 */
 void QETProject::refreshDerivedPotentialTypes()
 {
@@ -5288,8 +5300,6 @@ void QETProject::refreshDerivedPotentialTypes()
 			if (diagram->isLoaded())
 				diagram->update();
 	}
-		//A new wire or a new location changes numbers though no type did
-	TecsideCableNumber::refreshProject(this);
 }
 
 /**
