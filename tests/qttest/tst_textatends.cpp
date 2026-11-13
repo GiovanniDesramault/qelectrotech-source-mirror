@@ -201,6 +201,21 @@ class tst_textatends : public QObject
 			QCOMPARE(c->endTextItem()->rotation(), qreal(90));
 		}
 
+		void shortWireShowsOneText()
+		{
+			Rig r;
+			r.b->setPos(0, 40);
+			QCoreApplication::processEvents();
+			Conductor *c = r.wire(true);
+			QVERIFY(c->textItem()->isVisible());
+			QVERIFY2(!c->endTextItem()->isVisible(),
+					 "two numbers that would touch: only the first stays");
+				//long again: both come back
+			r.b->setPos(0, 300);
+			QCoreApplication::processEvents();
+			QVERIFY(c->endTextItem()->isVisible());
+		}
+
 		void moveElementFollows()
 		{
 			Rig r;

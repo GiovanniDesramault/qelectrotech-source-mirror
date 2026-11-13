@@ -1619,7 +1619,22 @@ void Conductor::updateTextVisibility()
 	if (m_text_item_end)
 		ShownKinds::setVisible(m_text_item_end,
 							   m_properties.m_text_at_ends
-							   && m_text_item->isVisible());
+							   && m_text_item->isVisible()
+							   && !endTextTouchesFirst());
+}
+
+/**
+	@brief Conductor::endTextTouchesFirst
+	@return true when the second text would touch the first, as on a
+	very short wire: the number is then shown once
+*/
+bool Conductor::endTextTouchesFirst() const
+{
+	if (!m_text_item || !m_text_item_end)
+		return false;
+	const QRectF first = m_text_item->mapRectToParent(m_text_item->boundingRect());
+	const QRectF second = m_text_item_end->mapRectToParent(m_text_item_end->boundingRect());
+	return first.intersects(second);
 }
 
 /**
@@ -1849,7 +1864,8 @@ void Conductor::placeTextsAtEnds()
 		m_text_item_end->setRotation(m_text_item->rotation());
 	place(m_text_item_end, last->secondPoint(), last->firstPoint(),
 		  last->isHorizontal());
-	ShownKinds::setVisible(m_text_item_end, m_text_item->isVisible());
+	ShownKinds::setVisible(m_text_item_end, m_text_item->isVisible()
+						   && !endTextTouchesFirst());
 }
 
 /**

@@ -204,6 +204,7 @@ class Conductor : public QGraphicsObject
 		bool isPreview() const { return m_preview; }
 		void setPreview(bool preview) { if (m_preview != preview) { m_preview = preview; update(); } }
 		bool hidesPlaceholder() const;
+		bool endTextTouchesFirst() const;
 		bool isFreezeLabel() const { return m_freeze_label; }
 		bool markReplacesText() const;
 	
