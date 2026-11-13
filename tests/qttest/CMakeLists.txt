@@ -2459,6 +2459,10 @@ qet_add_app_test(tst_tecsidecablenumber tst_tecsidecablenumber.cpp)
 # above the title block, renumbering a place and setting it in bulk.
 qet_add_app_test(tst_tecsidelocations tst_tecsidelocations.cpp)
 
+# TECside Draw rack for location: the layout (amplifiers at the bottom with
+# a blank between two, frames, shelves) and the new folio it draws.
+qet_add_app_test(tst_tecsiderack tst_tecsiderack.cpp)
+
 # TECside cable list CSV: type, number and both ends, cores under
 # their multicore; a plain project's list stays as it was.
 qet_add_app_test(tst_tecsideexport tst_tecsideexport.cpp)

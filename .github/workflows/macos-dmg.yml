@@ -50,7 +50,7 @@ jobs:
           tst_terminalcabledefaults tst_symbolpotentialsources
           tst_dockpotentialtype tst_tecsideconductorprops
           tst_tecsidecablenumber tst_tecsideexport tst_textatends
-          tst_tecsidelocations
+          tst_tecsidelocations tst_tecsiderack
 
       - name: Run the TECside tests
         env:
