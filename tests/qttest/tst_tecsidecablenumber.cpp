@@ -195,6 +195,13 @@ class tst_tecsidecablenumber : public QObject
 		}
 	};
 
+		//A uuid that sorts before any random one
+	static QUuid lowestUuid()
+	{
+		return QUuid(QStringLiteral(
+				"{00000000-0000-4000-8000-000000000001}"));
+	}
+
 	private slots:
 		void formatPads()
 		{
@@ -361,15 +368,10 @@ class tst_tecsidecablenumber : public QObject
 			QCOMPARE(original->properties().text,
 					 QStringLiteral("SDI-001-03-07"));
 				//A copy whose uuid sorts lower than the original's
-			Conductor *copy = nullptr;
-			for (int i = 0 ; i < 200 && !copy ; ++i) {
-				auto *c = new Conductor(r.out(1), r.in(1));
-				if (c->uuid().toString() < original->uuid().toString())
-					copy = c;
-				else
-					delete c;
-			}
-			QVERIFY(copy);
+			auto *copy = new Conductor(r.out(1), r.in(1));
+			copy->setUuid(lowestUuid());
+			QVERIFY(copy->uuid().toString()
+					< original->uuid().toString());
 			ConductorProperties p = copy->properties();
 			p.m_tecside_number = true;
 			p.m_type_seq = 1;
@@ -382,6 +384,63 @@ class tst_tecsidecablenumber : public QObject
 					 QStringLiteral("SDI-001-03-07"));
 			QCOMPARE(copy->properties().text,
 					 QStringLiteral("SDI-002-03-07"));
+		}
+
+		void pasteAfterReopenKeepsOriginal()
+		{
+				//The memory of who held a number is filled by a refresh;
+				//a folio built after opening must not leave it empty, or
+				//a copy pasted then takes the number of its original
+			for (int run = 0 ; run < 20 ; ++run) {
+				QTemporaryDir dir;
+				QVERIFY(dir.isValid());
+				const QString path = dir.filePath(
+						QStringLiteral("paste.qet"));
+				QUuid original_uuid;
+				{
+					Rig r;
+					Conductor *c = r.draw(r.out(0), r.in(0));
+					QCOMPARE(c->properties().text,
+							 QStringLiteral("SDI-001-03-07"));
+					original_uuid = c->uuid();
+					r.project.setFilePath(path);
+					QVERIFY(r.project.write().isOk());
+				}
+				QETProject reopened(path);
+					//The refresh after opening, folios not built yet
+				QCoreApplication::processEvents();
+				QCOMPARE(reopened.folios().size(), 1);
+				Diagram *folio = reopened.folios().first();
+				QVERIFY(!folio->isLoaded());
+				folio->ensureLoaded();
+				Conductor *original = nullptr;
+				for (Conductor *c : folio->conductors())
+					if (c->uuid() == original_uuid) original = c;
+				QVERIFY(original);
+				Element *from = original->terminal1->parentElement();
+				Element *to = original->terminal2->parentElement();
+					//Pasted in the same turn, between two other
+					//terminals, its uuid sorting lower than the
+					//original's
+				auto *copy = new Conductor(from->terminals().at(1),
+										   to->terminals().at(1));
+				copy->setUuid(lowestUuid());
+				QVERIFY(copy->uuid().toString() < original_uuid.toString());
+				ConductorProperties p = copy->properties();
+				p.m_tecside_number = true;
+				p.m_type_seq = 1;
+				p.m_type_seq_of = QStringLiteral("SDI");
+				p.text = original->properties().text;
+				copy->setProperties(p);
+				folio->undoStack().push(
+					new AddGraphicsObjectCommand(copy, folio, QPointF()));
+				QCoreApplication::processEvents();
+				QCOMPARE(original->properties().text,
+						 QStringLiteral("SDI-001-03-07"));
+				QCOMPARE(original->properties().m_type_seq, 1);
+				QCOMPARE(copy->properties().text,
+						 QStringLiteral("SDI-002-03-07"));
+			}
 		}
 
 		void duplicateSeqIsReassigned()

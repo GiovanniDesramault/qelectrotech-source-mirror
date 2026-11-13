@@ -149,6 +149,29 @@ std::pair<Terminal *, Terminal *> orderedEnds(Conductor *conductor)
 }
 
 /**
+	Remember who holds which number in @p folio, just built from the file
+	(lazy folios), as a refresh would: the wires the file holds keep their
+	numbers against a copy pasted before the next refresh. What the
+	memory already holds stays.
+*/
+void rememberFolio(QETProject *project, Diagram *folio)
+{
+	if (!project || !folio) return;
+	auto &memory = project->cableNumberMemory();
+	for (Conductor *c : folio->conductors()) {
+		const ConductorProperties p = c->properties();
+		if (!p.m_tecside_number || p.m_type_seq < 1
+				|| p.m_type_seq_of.isEmpty())
+			continue;
+			//A multicore is remembered by its cable
+		const QUuid id = p.m_cable_uuid.isNull() ? c->uuid()
+												 : p.m_cable_uuid;
+		if (!memory.contains(id))
+			memory.insert(id, {p.m_type_seq_of, p.m_type_seq});
+	}
+}
+
+/**
 	Number the wires of @p project that ask for it. The number rides on
 	the refresh of the derived types and is written to the wire without an
 	undo step of its own, so undoing the wire takes it away as well.

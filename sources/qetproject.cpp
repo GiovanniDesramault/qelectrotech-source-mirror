@@ -978,8 +978,12 @@ void QETProject::buildFolios(const QList<Diagram *> &folios) const
 			}
 		}
 	}
-	for (Diagram *d : std::as_const(built))
+	for (Diagram *d : std::as_const(built)) {
 		self->folioLoaded(d);
+			//The numbers the file gives are held by its wires, before
+			//any refresh: a copy pasted at once does not take them
+		TecsideCableNumber::rememberFolio(self, d);
+	}
 	self->m_data_base.blockSignals(signals_were_blocked);
 	if (!signals_were_blocked && !built.isEmpty()) {
 		emit self->m_data_base.dataBaseUpdated();

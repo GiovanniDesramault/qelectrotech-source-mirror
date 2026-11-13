@@ -25,6 +25,7 @@
 #include <utility>
 
 class Conductor;
+class Diagram;
 class QETProject;
 class Terminal;
 
@@ -43,6 +44,7 @@ namespace TecsideCableNumber
 			const QString &loc2, TerminalData::Signal s2);
 	std::pair<Terminal *, Terminal *> orderedEnds(Conductor *conductor);
 	void refreshProject(QETProject *project);
+	void rememberFolio(QETProject *project, Diagram *folio);
 }
 
 #endif
