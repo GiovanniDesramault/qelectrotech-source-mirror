@@ -73,6 +73,11 @@ namespace
 		bool keeps = false;
 		Cable *cable = nullptr;
 		QList<Core> cores;
+			//A chain of single wires looped through devices: all its
+			//wires, and the two ends the number is read from
+		QList<Core> chain;
+		Terminal *from = nullptr;
+		Terminal *to = nullptr;
 	};
 
 	QString locationOf(Terminal *terminal)
@@ -100,6 +105,105 @@ namespace
 		if (name == QLatin1String("out")) return TerminalData::Signal::Out;
 		if (name == QLatin1String("in")) return TerminalData::Signal::In;
 		return TerminalData::Signal::None;
+	}
+
+		//The terminal of the same device that "X IN" is looped through
+		//to, "X LINK", and the other way round
+	Terminal *linkPartner(Terminal *terminal)
+	{
+		Element *element = terminal ? terminal->parentElement() : nullptr;
+		if (!element) return nullptr;
+		QString name = terminal->baseName();
+		if (name.endsWith(QLatin1String(" IN")))
+			name = name.chopped(3) + QLatin1String(" LINK");
+		else if (name.endsWith(QLatin1String(" LINK")))
+			name = name.chopped(5) + QLatin1String(" IN");
+		else
+			return nullptr;
+		for (Terminal *t : element->terminals())
+			if (t->baseName() == name) return t;
+		return nullptr;
+	}
+
+		//Join the single wires of one type looped through a device
+		//(speaker IN to LINK) into one chain that takes one number, read
+		//from the two ends of the chain. The chain is known by the wire
+		//that held its number, else by its lowest uuid.
+	void joinChains(QList<Wire> &wires)
+	{
+		QHash<Conductor *, int> index;
+		QList<int> root;
+		for (int i = 0 ; i < wires.size() ; ++i) {
+			index.insert(wires.at(i).conductor, i);
+			root << i;
+		}
+		const auto find = [&root](int i) {
+			while (root.at(i) != i) i = root[i] = root.at(root.at(i));
+			return i;
+		};
+		const auto partners = [&](int i) {
+			QList<int> out;
+			Conductor *c = wires.at(i).conductor;
+			for (Terminal *t : {c->terminal1, c->terminal2})
+				if (Terminal *p = linkPartner(t))
+					for (Conductor *other : p->conductors()) {
+						const auto j = index.constFind(other);
+						if (j != index.constEnd() && !wires.at(i).type.isEmpty()
+								&& wires.at(*j).type == wires.at(i).type)
+							out << *j;
+					}
+			return out;
+		};
+		for (int i = 0 ; i < wires.size() ; ++i)
+			for (int j : partners(i))
+				root[find(i)] = find(j);
+
+		QMap<int, QList<int>> groups;
+		for (int i = 0 ; i < wires.size() ; ++i) groups[find(i)] << i;
+		QList<Wire> joined;
+		for (const QList<int> &group : std::as_const(groups)) {
+			if (group.size() == 1) {
+				joined << wires.at(group.first());
+				continue;
+			}
+			Wire chain = wires.at(group.first());
+			QList<Terminal *> ends;
+			for (int i : group) {
+				const Wire &w = wires.at(i);
+				chain.chain << Core{w.conductor, w.properties};
+				if (w.id.toString() < chain.id.toString()) chain.id = w.id;
+				for (Terminal *t : {w.conductor->terminal1, w.conductor->terminal2}) {
+					Terminal *p = linkPartner(t);
+					bool inside = false;
+					if (p)
+						for (Conductor *other : p->conductors())
+							inside = inside || group.contains(index.value(other, -1));
+					if (!inside) ends << t;
+				}
+			}
+			for (int i : group) {
+				const Wire &w = wires.at(i);
+				if (w.properties.m_type_seq >= 1
+						&& w.properties.m_type_seq_of == w.type) {
+					chain.id = w.id;
+					chain.conductor = w.conductor;
+					chain.properties = w.properties;
+					break;
+				}
+			}
+				//Output side first, as for a single wire
+			std::sort(ends.begin(), ends.end(), [](Terminal *a, Terminal *b) {
+				const int ra = rank(signalOf(a)), rb = rank(signalOf(b));
+				return ra != rb ? ra < rb
+						: padded(locationOf(a)) < padded(locationOf(b));
+			});
+			if (ends.size() >= 2) {
+				chain.from = ends.first();
+				chain.to = ends.last();
+			}
+			joined << chain;
+		}
+		wires = joined;
 	}
 }
 
@@ -218,6 +322,7 @@ void refreshProject(QETProject *project)
 				wires << wire;
 		}
 	}
+	joinChains(wires);
 		//A multicore takes one number for all its cores. Its type is the
 		//one of its first core.
 	for (auto it = cores.begin() ; it != cores.end() ; ++it) {
@@ -306,11 +411,10 @@ void refreshProject(QETProject *project)
 				seq = nextFree(used.value(w.type));
 				used[w.type].insert(seq);
 			}
-			const auto ends = fromTo(
-					locationOf(w.conductor->terminal1),
-					signalOf(w.conductor->terminal1),
-					locationOf(w.conductor->terminal2),
-					signalOf(w.conductor->terminal2));
+			Terminal *a = w.from ? w.from : w.conductor->terminal1;
+			Terminal *b = w.to ? w.to : w.conductor->terminal2;
+			const auto ends = fromTo(locationOf(a), signalOf(a),
+									 locationOf(b), signalOf(b));
 			text = format(w.type, seq, ends.first, ends.second);
 		}
 		if (seq >= 1)
@@ -322,18 +426,24 @@ void refreshProject(QETProject *project)
 		const QString held_type = w.properties.m_type_seq_of;
 		const int held_seq = w.properties.m_type_seq;
 		if (!w.cable) {
-			ConductorProperties p = w.properties;
-			p.m_type_seq = seq;
-			p.m_type_seq_of = seq >= 1 ? w.type : QString();
-				//Without a type a typed text stays: only a number
-				//written here goes
-			if (!text.isEmpty() || isNumber(p.text, held_type, held_seq))
-				p.text = text;
-				//A formula would write the text again
-			if (!text.isEmpty())
-				p.m_formula.clear();
-			if (p != w.properties)
-				w.conductor->setProperties(p);
+			const QList<Core> members = w.chain.isEmpty()
+					? QList<Core>{Core{w.conductor, w.properties}} : w.chain;
+			for (const Core &member : members) {
+				ConductorProperties p = member.properties;
+				p.m_type_seq = seq;
+				p.m_type_seq_of = seq >= 1 ? w.type : QString();
+					//Without a type a typed text stays: only a number
+					//written here goes
+				if (!text.isEmpty()
+						|| isNumber(p.text, member.properties.m_type_seq_of,
+									member.properties.m_type_seq))
+					p.text = text;
+					//A formula would write the text again
+				if (!text.isEmpty())
+					p.m_formula.clear();
+				if (p != member.properties)
+					member.conductor->setProperties(p);
+			}
 			continue;
 		}
 

@@ -126,6 +126,41 @@ class tst_tecsidecablenumber : public QObject
 			element->setElementInformations(info);
 		}
 
+			//A device with named terminals: "name:signal" each, all SDI
+		Element *device(const QString &name, const QStringList &terminals,
+						const QString &location)
+		{
+			auto *collection = project.embeddedElementCollection();
+			QString xml;
+			for (int i = 0 ; i < terminals.size() ; ++i) {
+				const QStringList t = terminals.at(i).split(QLatin1Char(':'));
+				xml += QStringLiteral(
+					"<terminal x=\"%1\" y=\"20\" orientation=\"s\" uuid=\"%2\" "
+					"name=\"%3\" potential_type=\"SDI\" signal=\"%4\"/>")
+					.arg(i * 10).arg(QUuid::createUuid().toString(), t.at(0), t.at(1));
+			}
+			QDomDocument definition;
+			definition.setContent(QStringLiteral(
+				"<definition type=\"element\" link_type=\"simple\" uuid=\"%1\" "
+				"width=\"60\" height=\"40\" hotspot_x=\"30\" hotspot_y=\"20\">"
+				"<names><name lang=\"en\">%2</name></names>"
+				"<description><line x1=\"0\" y1=\"-10\" x2=\"40\" y2=\"-10\"/>%3"
+				"</description></definition>")
+				.arg(QUuid::createUuid().toString(), name, xml));
+			if (!collection->addElementDefinition(QStringLiteral("import"),
+					name, definition.documentElement()))
+				return nullptr;
+			int state = 0;
+			Element *element = ElementFactory::Instance()->createElement(
+				ElementsLocation(QStringLiteral("embed://import/%1.elmt").arg(name),
+								 &project),
+				nullptr, &state);
+			if (state || !element) return nullptr;
+			diagram->addItem(element);
+			setLocation(element, location);
+			return element;
+		}
+
 		void settle() { QCoreApplication::processEvents(); }
 
 			//Out-of-undo edits ask for a refresh, as an undo command does
@@ -536,6 +571,34 @@ class tst_tecsidecablenumber : public QObject
 					 QStringLiteral("AUD-002-03-07/1"));
 			QCOMPARE(cores.last()->properties().text,
 					 QStringLiteral("AUD-002-03-07/12"));
+		}
+
+		void loopedChainGetsOneNumber()
+		{
+			Rig r;
+			Element *amp = r.device(QStringLiteral("amp"),
+					{QStringLiteral("OUT A:out")}, QStringLiteral("01"));
+			QList<Element *> speakers;
+			for (const QString &loc : {QStringLiteral("05"), QStringLiteral("06"),
+									   QStringLiteral("09")})
+				speakers << r.device(QStringLiteral("spk") + loc,
+						{QStringLiteral("SPK IN:in"), QStringLiteral("SPK LINK:out")}, loc);
+			Conductor *first = r.draw(r.out(0), r.in(0));
+			Conductor *a = r.draw(amp->terminals().at(0),
+								  speakers.at(0)->terminals().at(0));
+			Conductor *b = r.draw(speakers.at(0)->terminals().at(1),
+								  speakers.at(1)->terminals().at(0));
+				//Drawn backwards: the chain still runs from the amp
+			Conductor *c = r.draw(speakers.at(2)->terminals().at(0),
+								  speakers.at(1)->terminals().at(1));
+			QCOMPARE(first->properties().text, QStringLiteral("SDI-001-03-07"));
+			for (Conductor *link : {a, b, c})
+				QCOMPARE(link->properties().text, QStringLiteral("SDI-002-01-09"));
+
+				//Cut the chain: the part that held the number keeps it
+			r.remove(c);
+			QCOMPARE(a->properties().text, QStringLiteral("SDI-002-01-06"));
+			QCOMPARE(b->properties().text, QStringLiteral("SDI-002-01-06"));
 		}
 
 		void splitCableKeepsItsNumber()
