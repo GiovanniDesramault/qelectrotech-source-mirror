@@ -16858,6 +16858,27 @@ They are not shown, but they are kept in the file as they are, and join their te
         <source>Find duplicate signals and components...</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <location filename="../sources/qetdiagrameditor.cpp"/>
+        <source>Set location...</source>
+        <translation>Locatie instellen...</translation>
+    </message>
+    <message>
+        <location filename="../sources/qetdiagrameditor.cpp"/>
+        <source>Give the selected elements one location</source>
+        <comment>status bar tip</comment>
+        <translation>Geef de geselecteerde elementen één locatie</translation>
+    </message>
+    <message>
+        <location filename="../sources/qetdiagrameditor.cpp"/>
+        <source>Manage locations...</source>
+        <translation>Locaties beheren...</translation>
+    </message>
+    <message>
+        <location filename="../sources/qetdiagrameditor.cpp"/>
+        <source>Number and name the locations of the project, shown above the title block</source>
+        <translation>Nummer en benoem de locaties van het project, getoond boven de titelhoek</translation>
+    </message>
 </context>
 <context>
     <name>QETElementEditor</name>
@@ -28704,6 +28725,96 @@ Door de associatie van de naam &quot;volta&quot; met de waarde &quot;1745&quot; 
         <location filename="../sources/SearchAndReplace/ui/replaceadvanceddialog.ui" line="92"/>
         <source>What:</source>
         <translation>Welke :</translation>
+    </message>
+</context>
+<context>
+    <name>TecsideLocations</name>
+    <message>
+        <location filename="../sources/tecside/tecsidelocations.cpp"/>
+        <source>Locations</source>
+        <comment>header of the box of places on every sheet</comment>
+        <translation>Locaties</translation>
+    </message>
+    <message>
+        <location filename="../sources/tecside/tecsidelocations.cpp"/>
+        <source>Change the locations</source>
+        <translation>Locaties wijzigen</translation>
+    </message>
+    <message>
+        <location filename="../sources/tecside/tecsidelocations.cpp"/>
+        <source>Set the location</source>
+        <translation>Locatie instellen</translation>
+    </message>
+    <message>
+        <location filename="../sources/tecside/tecsidelocations.cpp"/>
+        <source>Renumber the locations</source>
+        <translation>Locaties hernummeren</translation>
+    </message>
+</context>
+<context>
+    <name>TecsideLocationsDialog</name>
+    <message>
+        <location filename="../sources/tecside/tecsidelocationsdialog.cpp"/>
+        <source>Manage locations</source>
+        <translation>Locaties beheren</translation>
+    </message>
+    <message>
+        <location filename="../sources/tecside/tecsidelocationsdialog.cpp"/>
+        <source>Number</source>
+        <translation>Nummer</translation>
+    </message>
+    <message>
+        <location filename="../sources/tecside/tecsidelocationsdialog.cpp"/>
+        <source>Name</source>
+        <translation>Naam</translation>
+    </message>
+    <message>
+        <location filename="../sources/tecside/tecsidelocationsdialog.cpp"/>
+        <source>Add</source>
+        <translation>Toevoegen</translation>
+    </message>
+    <message>
+        <location filename="../sources/tecside/tecsidelocationsdialog.cpp"/>
+        <source>Remove</source>
+        <translation>Verwijderen</translation>
+    </message>
+    <message>
+        <location filename="../sources/tecside/tecsidelocationsdialog.cpp"/>
+        <source>Move up</source>
+        <translation>Omhoog</translation>
+    </message>
+    <message>
+        <location filename="../sources/tecside/tecsidelocationsdialog.cpp"/>
+        <source>Move down</source>
+        <translation>Omlaag</translation>
+    </message>
+    <message>
+        <location filename="../sources/tecside/tecsidelocationsdialog.cpp"/>
+        <source>The number of a location is what its devices carry in their &quot;location&quot; information and in the cable numbers. Renumbering a location moves its devices along.</source>
+        <translation>Het nummer van een locatie is wat haar toestellen dragen in hun informatie &quot;locatie&quot; en in de kabelnummers. Een locatie hernummeren neemt haar toestellen mee.</translation>
+    </message>
+    <message>
+        <location filename="../sources/tecside/tecsidelocationsdialog.cpp"/>
+        <source>Every location needs a number.</source>
+        <translation>Elke locatie heeft een nummer nodig.</translation>
+    </message>
+    <message>
+        <location filename="../sources/tecside/tecsidelocationsdialog.cpp"/>
+        <source>The number %1 is used twice.</source>
+        <translation>Het nummer %1 wordt twee keer gebruikt.</translation>
+    </message>
+</context>
+<context>
+    <name>TecsideSetLocationDialog</name>
+    <message>
+        <location filename="../sources/tecside/tecsidelocationsdialog.cpp"/>
+        <source>Set location</source>
+        <translation>Locatie instellen</translation>
+    </message>
+    <message>
+        <location filename="../sources/tecside/tecsidelocationsdialog.cpp"/>
+        <source>Location:</source>
+        <translation>Locatie:</translation>
     </message>
 </context>
 </TS>
