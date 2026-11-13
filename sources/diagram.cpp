@@ -469,6 +469,15 @@ void Diagram::drawBackground(QPainter *p, const QRectF &r) {
 	}
 	if (use_border_) {
 		border_and_titleblock.draw(p);
+			//The TECside places, right above the title block, in the
+			//same pass: the view, printing and every export show them
+		if (m_project && m_project->tecsideLocations().isEnabled()) {
+			m_project->tecsideLocations().drawBox(
+				p, border_and_titleblock,
+				Diagram::background_color.lightness() < 128
+					? QColor(Qt::white) : QColor(Qt::black),
+				Diagram::background_color);
+		}
 	}
 
 	p -> restore();

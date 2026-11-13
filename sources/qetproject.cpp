@@ -2863,6 +2863,7 @@ QDomDocument QETProject::toXml(QHash<int, QByteArray> *kept_folios, QStringList 
 	writeSymbolTextsXml(project_root);
 	writeLanguagesXml(project_root);
 	writePotentialTypesXml(project_root);
+	writeTecsideLocationsXml(project_root);
 	writeTerminalLabelSplitXml(project_root);
 	writeWiringRulesXml(project_root);
 	writeChainedReportsXml(project_root);
@@ -4074,6 +4075,7 @@ void QETProject::readProjectXml(QDomDocument &xml_project)
 	readSymbolTextsXml(xml_project);
 	readLanguagesXml(xml_project);
 	readPotentialTypesXml(xml_project);
+	readTecsideLocationsXml(xml_project);
 	readTerminalLabelSplitXml(xml_project);
 	readWiringRulesXml(xml_project);
 	readChainedReportsXml(xml_project);
@@ -5240,6 +5242,53 @@ void QETProject::setPotentialTypes(const PotentialTypes &potential_types)
 	scheduleDerivedPotentialTypes();
 }
 
+/**
+	@brief QETProject::readTecsideLocationsXml
+	Read the <tecside_locations> element of the project: present, even
+	empty, the TECside places are on; absent, they are off.
+	@param xml_project : the xml description of the project
+*/
+void QETProject::readTecsideLocationsXml(QDomDocument &xml_project)
+{
+	m_tecside_locations = TecsideLocations::fromXml(xml_project.documentElement()
+			.firstChildElement(TecsideLocations::xmlTagName));
+}
+
+/**
+	@brief QETProject::writeTecsideLocationsXml
+	Write the <tecside_locations> element, only when the places are on,
+	so any other project saves exactly as before.
+	@param xml_element : the <project> element
+*/
+void QETProject::writeTecsideLocationsXml(QDomElement &xml_element)
+{
+	if (!m_tecside_locations.isEnabled()) {
+		return;
+	}
+	QDomDocument document = xml_element.ownerDocument();
+	xml_element.appendChild(m_tecside_locations.toXml(document));
+}
+
+/**
+	@brief QETProject::setTecsideLocations
+	Set the TECside places, and redraw the box of every folio built.
+	@param locations
+*/
+void QETProject::setTecsideLocations(const TecsideLocations &locations)
+{
+	if (locations == m_tecside_locations) {
+		return;
+	}
+	m_tecside_locations = locations;
+	storeSettings();
+	setModified(true);
+	emit tecsideLocationsChanged();
+	for (Diagram *diagram : folios()) {
+		if (diagram->isLoaded())
+			diagram->update();
+	}
+}
+
 QString QETProject::derivedPotentialType(const QUuid &wire)
 {
 	if (m_potential_types.mode() != PotentialTypes::Mode::AtSource)
@@ -5596,6 +5645,7 @@ void QETProject::storeSettings()
 	writeSymbolTextsXml(root);
 	writeLanguagesXml(root);
 	writePotentialTypesXml(root);
+	writeTecsideLocationsXml(root);
 	writeTerminalLabelSplitXml(root);
 	writeWiringRulesXml(root);
 	writeChainedReportsXml(root);

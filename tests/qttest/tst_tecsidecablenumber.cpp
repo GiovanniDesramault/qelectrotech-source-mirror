@@ -33,6 +33,7 @@
 #include "qetproject.h"
 #include "qetresult.h"
 #include "tecside/tecsidecablenumber.h"
+#include "tecside/tecsidelocations.h"
 #include "undocommand/addgraphicsobjectcommand.h"
 #include "undocommand/changeelementinformationcommand.h"
 #include "undocommand/deleteqgraphicsitemcommand.h"
@@ -395,6 +396,29 @@ class tst_tecsidecablenumber : public QObject
 				r.camera, old, info));
 			r.settle();
 			QCOMPARE(c->properties().text, QStringLiteral("SDI-001-04-07"));
+		}
+
+		void renumberedLocationUpdatesText()
+		{
+			Rig r;
+			Conductor *c = r.draw(r.out(0), r.in(0));
+			r.diagram->undoStack().push(TecsideLocationEdit::renumber(
+				&r.project, {{QStringLiteral("03"), QStringLiteral("04")}}));
+			r.settle();
+			QCOMPARE(c->properties().text, QStringLiteral("SDI-001-04-07"));
+			r.diagram->undoStack().undo();
+			r.settle();
+			QCOMPARE(c->properties().text, QStringLiteral("SDI-001-03-07"));
+		}
+
+		void bulkLocationUpdatesText()
+		{
+			Rig r;
+			Conductor *c = r.draw(r.out(0), r.in(0));
+			r.diagram->undoStack().push(TecsideLocationEdit::setLocation(
+				{r.camera, r.switcher}, QStringLiteral("09")));
+			r.settle();
+			QCOMPARE(c->properties().text, QStringLiteral("SDI-001-09-09"));
 		}
 
 		void pastedCopyGetsNewNumber()

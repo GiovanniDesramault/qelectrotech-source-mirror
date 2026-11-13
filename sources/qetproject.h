@@ -28,6 +28,7 @@
 #include "dataBase/qetdbfile.h"
 #include "properties/projectlanguages.h"
 #include "properties/potentialtypes.h"
+#include "tecside/tecsidelocations.h"
 #include "properties/reportproperties.h"
 #include "properties/xrefproperties.h"
 #include "titleblock/templatescollection.h"
@@ -342,6 +343,9 @@ class QETProject : public QObject
 		void setLanguages(const ProjectLanguages &languages);
 		const PotentialTypes &potentialTypes() const {return m_potential_types;}
 		void setPotentialTypes(const PotentialTypes &potential_types);
+			/// The TECside places of the project, off unless it has some
+		const TecsideLocations &tecsideLocations() const {return m_tecside_locations;}
+		void setTecsideLocations(const TecsideLocations &locations);
 			/// The type @p wire takes from the source terminals of its
 			/// potential, in the mode that draws from them; empty otherwise
 		QString derivedPotentialType(const QUuid &wire);
@@ -455,6 +459,7 @@ class QETProject : public QObject
 		void diagramRemoved(QETProject *, Diagram *);
 		void projectModified(QETProject *, bool);
 		void potentialTypesChanged();
+		void tecsideLocationsChanged();
 		void projectDiagramsOrderChanged(QETProject *, int, int);
 		void diagramUsedTemplate(TitleBlockTemplatesCollection *, const QString &);
 		void readOnlyChanged(QETProject *, bool);
@@ -530,6 +535,7 @@ class QETProject : public QObject
 		void readSymbolTextsXml(QDomDocument &xml_project);
 		void readLanguagesXml(QDomDocument &xml_project);
 		void readPotentialTypesXml(QDomDocument &xml_project);
+		void readTecsideLocationsXml(QDomDocument &xml_project);
 		void readChainedReportsXml(QDomDocument &xml_project);
 		void readConductorPlantCountersXml(QDomDocument &xml_project);
 		void readTerminalLabelSplitXml(QDomDocument &xml_project);
@@ -549,6 +555,7 @@ class QETProject : public QObject
 		void writeSymbolTextsXml(QDomElement &);
 		void writeLanguagesXml(QDomElement &);
 		void writePotentialTypesXml(QDomElement &);
+		void writeTecsideLocationsXml(QDomElement &);
 		void writeChainedReportsXml(QDomElement &);
 		void writeConductorPlantCountersXml(QDomElement &);
 		void writeTerminalLabelSplitXml(QDomElement &);
@@ -676,6 +683,8 @@ class QETProject : public QObject
 		ProjectLanguages m_languages;
 			/// The potential types and whether conductors are drawn from them
 		PotentialTypes m_potential_types;
+			/// The TECside places, see TecsideLocations
+		TecsideLocations m_tecside_locations;
 			/// The types wires take from the sources, see derivedPotentialType()
 		QHash<QUuid, QString> m_derived_potential_types;
 		bool m_derived_potential_types_due = false;
