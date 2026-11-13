@@ -73,8 +73,12 @@ jobs:
       - name: Bundle Qt and build the DMG
         run: |
           set -euo pipefail
-          # ad-hoc signature: arm64 will not launch an unsigned bundle
-          macdeployqt build/qelectrotech.app -dmg -codesign=-
+          macdeployqt build/qelectrotech.app
+          # ad-hoc signature: arm64 will not launch an unsigned bundle, and
+          # macdeployqt -codesign leaves the seal invalid ("damaged" on download)
+          codesign --force --deep -s - build/qelectrotech.app
+          codesign --verify --deep --strict build/qelectrotech.app
+          hdiutil create -volname "QElectroTech TECside" -srcfolder build/qelectrotech.app -format UDZO build/qelectrotech.dmg
           VERSION="${GITHUB_REF_NAME}"
           [ "${GITHUB_REF_TYPE}" = "tag" ] || VERSION="dev-${GITHUB_SHA::7}"
           mkdir -p dist
