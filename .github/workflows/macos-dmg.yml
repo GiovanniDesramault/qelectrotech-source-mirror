@@ -90,7 +90,7 @@ jobs:
         with:
           name: qelectrotech-macos-${{ matrix.arch }}
           path: dist/*.dmg
-          retention-days: 40
+          retention-days: 1   # the DMGs live in the release; artifacts only eat the 500 MB free quota
           if-no-files-found: error
 
       - name: Upload DMG to the release
