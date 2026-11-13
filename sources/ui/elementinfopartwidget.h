@@ -20,6 +20,9 @@
 
 #include <QWidget>
 
+#include <utility>
+
+class QComboBox;
 class QCompleter;
 class QStringListModel;
 
@@ -50,6 +53,7 @@ class ElementInfoPartWidget : public QWidget
 		void setText (const QString &);
 		void setPlaceHolderText (const QString &text);
 		void setSuggestions (const QStringList &suggestions);
+		void setChoices (const QList<std::pair<QString, QString>> &choices);
 		void setFocusTolineEdit();
 		void setEnabled(bool e);
 		void setDisabled(bool d);
@@ -74,6 +78,7 @@ class ElementInfoPartWidget : public QWidget
 		bool m_show_erase = false;
 		QCompleter *m_completer = nullptr;
 		QStringListModel *m_suggestions_model = nullptr;
+		QComboBox *m_choices_combo = nullptr;
 };
 
 #endif // ELEMENTINFOPARTWIDGET_H

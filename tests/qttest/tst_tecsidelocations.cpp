@@ -27,6 +27,8 @@
 #include "qetresult.h"
 #include "tecside/tecsidelocations.h"
 #include "tecside/tecsidelocationsdialog.h"
+#include "ui/elementinfopartwidget.h"
+#include "ui/elementinfowidget.h"
 
 #include <QComboBox>
 #include <QDomDocument>
@@ -362,6 +364,46 @@ class tst_tecsidelocations : public QObject
 			combo.setEditText(QStringLiteral("09"));
 			QCOMPARE(combo.currentText(), QStringLiteral("09"));
 			QVERIFY(TecsideLocationModel::choicesOf(TecsideLocations()).isEmpty());
+		}
+
+		static ElementInfoPartWidget *locationPart(ElementInfoWidget &widget)
+		{
+			for (auto *part : widget.findChildren<ElementInfoPartWidget *>())
+				if (part->key() == QETInformation::ELMT_LOCATION)
+					return part;
+			return nullptr;
+		}
+
+		void elementLocationIsAListWhenOn()
+		{
+			Rig r(1);
+			Rig::setLocation(r.devices.at(0), QStringLiteral("01"));
+			r.project.setTecsideLocations(sample());
+			ElementInfoWidget widget(r.devices.at(0));
+			widget.updateUi();
+			ElementInfoPartWidget *part = locationPart(widget);
+			QVERIFY(part);
+			auto *combo = part->findChild<QComboBox *>();
+			QVERIFY(combo);
+			QCOMPARE(combo->count(), 2);
+				//Filling the list left the location as it was
+			QCOMPARE(part->text(), QStringLiteral("01"));
+			combo->setCurrentIndex(1);
+			QCOMPARE(part->text(), QStringLiteral("02"));
+			QCOMPARE(widget.currentInfo().value(QETInformation::ELMT_LOCATION).toString(),
+					 QStringLiteral("02"));
+		}
+
+		void elementLocationIsPlainWhenOff()
+		{
+			Rig r(1);
+			Rig::setLocation(r.devices.at(0), QStringLiteral("01"));
+			ElementInfoWidget widget(r.devices.at(0));
+			widget.updateUi();
+			ElementInfoPartWidget *part = locationPart(widget);
+			QVERIFY(part);
+			QVERIFY(!part->findChild<QComboBox *>());
+			QCOMPARE(part->text(), QStringLiteral("01"));
 		}
 
 		void setLocationActionOnlyWhenOn()

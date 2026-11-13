@@ -40,6 +40,7 @@
 #include <undocommand/changeelementinformationcommand.h>
 #include "customelementinfopartwidget.h"
 #include "elementinfopartwidget.h"
+#include "tecside/tecsidelocationsdialog.h"
 
 /**
 	@brief ElementInfoWidget::ElementInfoWidget
@@ -664,7 +665,17 @@ void ElementInfoWidget::updateUi()
 	if (m_live_edit) disableLiveEdit();
 
 	const auto element_info{m_element->elementInformations()};
-	
+
+		//TECside: the location is picked from the project's list, when
+		//the project keeps one
+	if (ElementInfoPartWidget *location = infoPartWidgetForKey(QETInformation::ELMT_LOCATION)) {
+		Diagram *diagram = m_element->diagram();
+		QETProject *project = diagram ? diagram->project() : nullptr;
+		location->setChoices(project
+				? TecsideLocationModel::choicesOf(project->tecsideLocations())
+				: QList<TecsideLocationModel::Choice>());
+	}
+
 	for (ElementInfoPartWidget *eipw : m_eipw_list) {
 		eipw -> setText (element_info[eipw->key()].toString());
 	}

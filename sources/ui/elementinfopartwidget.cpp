@@ -21,6 +21,8 @@
 #include <qeticons.h>
 #include <qetinformation.h>
 #include "ui_elementinfopartwidget.h"
+#include "tecside/tecsidelocationsdialog.h"
+#include <QComboBox>
 #include <QCompleter>
 #include <QDialog>
 #include <QDialogButtonBox>
@@ -188,6 +190,45 @@ void ElementInfoPartWidget::setSuggestions(const QStringList &suggestions)
 		m_completer->setFilterMode(Qt::MatchContains);
 	}
 	m_suggestions_model->setStringList(suggestions);
+	ui->line_edit->setCompleter(m_completer);
+}
+
+/**
+	@brief ElementInfoPartWidget::setChoices
+	Turn the line edit into an editable drop-down list of @p choices,
+	each a value and how it is offered ("03" offered as "03 – FOH", for
+	the TECside locations). Picking one writes its value only; a value
+	typed by hand still goes. The text in the line edit is left as it
+	is. An empty list leaves a line edit never turned into a list alone.
+	@param choices : the values and their labels
+*/
+void ElementInfoPartWidget::setChoices(const QList<std::pair<QString, QString>> &choices)
+{
+	if (!m_choices_combo) {
+		if (choices.isEmpty())
+			return;
+		m_choices_combo = new QComboBox(this);
+		m_choices_combo->setSizePolicy(ui->line_edit->sizePolicy());
+		ui->gridLayout_2->replaceWidget(ui->line_edit, m_choices_combo);
+		const QString text = ui->line_edit->text();
+		m_choices_combo->setEditable(true);
+		m_choices_combo->setLineEdit(ui->line_edit);
+		ui->line_edit->setText(text);
+			//A pick changes the text as typing does
+		connect(m_choices_combo, &QComboBox::activated, this, [this]() {
+			emit textEdited(ui->line_edit->text());
+		});
+	}
+		//Filling the list would take its first item into the line edit
+	const QString text = ui->line_edit->text();
+	{
+		const QSignalBlocker block_edit(ui->line_edit);
+		const QSignalBlocker block_combo(m_choices_combo);
+		TecsideLocationModel::setUpCombo(m_choices_combo, choices);
+		m_choices_combo->setCurrentIndex(-1);
+		ui->line_edit->setText(text);
+	}
+		//The drop-down of the values other elements use, if any, stays
 	ui->line_edit->setCompleter(m_completer);
 }
 
