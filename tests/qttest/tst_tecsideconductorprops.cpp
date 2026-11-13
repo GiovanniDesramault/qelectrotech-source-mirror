@@ -18,6 +18,7 @@
 
 #include <QCheckBox>
 #include <QDomDocument>
+#include <QLineEdit>
 #include <QUndoStack>
 #include <QUuid>
 #include <QtTest>
@@ -220,6 +221,29 @@ class tst_tecsideconductorprops : public QObject
 			QCOMPARE(ends->checkState(), Qt::Unchecked);
 			QVERIFY(!a->properties().m_text_at_ends);
 			QVERIFY(!b->properties().m_text_at_ends);
+		}
+
+		void numberLocksText()
+		{
+				//The refresh writes the text of a numbered wire over
+				//anything typed in: the field says so instead
+			QETProject project;
+			Diagram *d = project.addNewDiagram();
+			Conductor *a = wire(d, {100, 100}, QString());
+			ConductorPropertiesEditorWidget editor({a});
+			editor.setLiveEdit(true);
+			editor.show();
+			QCheckBox *number = box(editor, "m_tecside_number_cb");
+			auto *text = editor.findChild<QLineEdit *>(
+					QStringLiteral("m_text_le"));
+			QVERIFY(number && text);
+			QVERIFY(text->isEnabled());
+			number->click();
+			QVERIFY(a->properties().m_tecside_number);
+			QVERIFY(!text->isEnabled());
+			QVERIFY(!text->toolTip().isEmpty());
+			number->click();
+			QVERIFY(text->isEnabled());
 		}
 };
 

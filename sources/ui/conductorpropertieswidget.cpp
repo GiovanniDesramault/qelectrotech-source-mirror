@@ -308,6 +308,7 @@ void ConductorPropertiesWidget::setMixedTecsideFlags(bool number, bool at_ends)
 	};
 	apply(ui->m_tecside_number_cb, number, m_properties.m_tecside_number);
 	apply(ui->m_text_at_ends_cb, at_ends, m_properties.m_text_at_ends);
+	updateTextField();
 }
 
 /**
@@ -387,11 +388,30 @@ void ConductorPropertiesWidget::setMixedTextFields(
 void ConductorPropertiesWidget::setTextLocked(bool locked)
 {
 	m_text_locked = locked;
-	ui->m_text_le->setEnabled(!locked && ui->m_formula_le->text().isEmpty());
-	ui->m_text_le->setToolTip(locked
-		? tr("Several conductors selected: the text is changed on one "
-		     "conductor at a time.")
-		: tr("Text"));
+	updateTextField();
+}
+
+/**
+	@brief ConductorPropertiesWidget::updateTextField
+	The conductor text can be typed in unless several conductors are
+	edited, a formula writes it, or the TECside number does: each refresh
+	of the numbers writes the text over what was typed in.
+*/
+void ConductorPropertiesWidget::updateTextField()
+{
+	const bool numbered = ui->m_tecside_number_cb->checkState()
+			== Qt::Checked;
+	ui->m_text_le->setEnabled(!m_text_locked && !numbered
+							  && ui->m_formula_le->text().isEmpty());
+	if (m_text_locked)
+		ui->m_text_le->setToolTip(
+			tr("Several conductors selected: the text is changed on one "
+			   "conductor at a time."));
+	else if (numbered)
+		ui->m_text_le->setToolTip(
+			tr("The TECside cable number writes this text."));
+	else
+		ui->m_text_le->setToolTip(tr("Text"));
 }
 
 /**
@@ -467,7 +487,10 @@ void ConductorPropertiesWidget::initWidget()
 
 	connect(ui->m_multiwires_gb, &QGroupBox::toggled, [this](bool toggle) {this->ui->m_singlewire_gb->setChecked(!toggle);});
 	connect(ui->m_singlewire_gb, &QGroupBox::toggled, [this](bool toggle) {this->ui->m_multiwires_gb->setChecked(!toggle);});
-	connect(ui->m_formula_le, &QLineEdit::textChanged, [this](QString text) {this->ui->m_text_le->setEnabled(!m_text_locked && text.isEmpty());});
+	connect(ui->m_formula_le, &QLineEdit::textChanged,
+			this, &ConductorPropertiesWidget::updateTextField);
+	connect(ui->m_tecside_number_cb, &QCheckBox::toggled,
+			this, &ConductorPropertiesWidget::updateTextField);
 	ui->m_multiwires_gb->setChecked(true);
 	ui->m_singlewire_gb->setChecked(true);
 #if TODO_LIST
