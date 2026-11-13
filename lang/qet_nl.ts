@@ -16879,6 +16879,16 @@ They are not shown, but they are kept in the file as they are, and join their te
         <source>Number and name the locations of the project, shown above the title block</source>
         <translation>Nummer en benoem de locaties van het project, getoond boven de titelhoek</translation>
     </message>
+    <message>
+        <location filename="../sources/qetdiagrameditor.cpp"/>
+        <source>Draw rack for location...</source>
+        <translation>Rack tekenen voor locatie...</translation>
+    </message>
+    <message>
+        <location filename="../sources/qetdiagrameditor.cpp"/>
+        <source>Draw the devices of one location in a rack, on a new folio</source>
+        <translation>Teken de toestellen van één locatie in een rack, op een nieuwe folio</translation>
+    </message>
 </context>
 <context>
     <name>QETElementEditor</name>
@@ -28813,6 +28823,54 @@ Door de associatie van de naam &quot;volta&quot; met de waarde &quot;1745&quot; 
     </message>
     <message>
         <location filename="../sources/tecside/tecsidelocationsdialog.cpp"/>
+        <source>Location:</source>
+        <translation>Locatie:</translation>
+    </message>
+</context>
+<context>
+    <name>TecsideRack</name>
+    <message>
+        <location filename="../sources/tecside/tecsiderackdrawer.cpp"/>
+        <source>The project cannot be changed.</source>
+        <translation>Het project kan niet gewijzigd worden.</translation>
+    </message>
+    <message>
+        <location filename="../sources/tecside/tecsiderackdrawer.cpp"/>
+        <source>The company collection has no rack symbols: av/rack needs its frames, a 1U blind panel and a shelf. Generate them with build_rack.py first.</source>
+        <translation>De bedrijfscollectie heeft geen racksymbolen: av/rack heeft zijn frames, een blindpaneel van 1U en een legbord nodig. Genereer ze eerst met build_rack.py.</translation>
+    </message>
+    <message>
+        <location filename="../sources/tecside/tecsiderackdrawer.cpp"/>
+        <source>No element has the location %1.</source>
+        <translation>Geen enkel element heeft de locatie %1.</translation>
+    </message>
+    <message>
+        <location filename="../sources/tecside/tecsiderackdrawer.cpp"/>
+        <source>Draw the rack of %1</source>
+        <translation>Het rack van %1 tekenen</translation>
+    </message>
+    <message>
+        <location filename="../sources/tecside/tecsiderackdrawer.cpp"/>
+        <source>Rack %1</source>
+        <translation>Rack %1</translation>
+    </message>
+    <message>
+        <location filename="../sources/tecside/tecsiderackdrawer.cpp"/>
+        <source>Not in rack:</source>
+        <translation>Niet in het rack:</translation>
+    </message>
+    <message>
+        <location filename="../sources/tecside/tecsiderackdrawer.cpp"/>
+        <source>Draw rack for location</source>
+        <translation>Rack tekenen voor locatie</translation>
+    </message>
+    <message>
+        <location filename="../sources/tecside/tecsiderackdrawer.cpp"/>
+        <source>The project has no locations: add them in Project &gt; Manage locations.</source>
+        <translation>Het project heeft geen locaties: voeg ze toe via Project &gt; Locaties beheren.</translation>
+    </message>
+    <message>
+        <location filename="../sources/tecside/tecsiderackdrawer.cpp"/>
         <source>Location:</source>
         <translation>Locatie:</translation>
     </message>
