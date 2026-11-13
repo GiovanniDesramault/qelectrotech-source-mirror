@@ -83,6 +83,17 @@ namespace
 					   : QString();
 	}
 
+		//Whether @p text is (or starts with, for a core) a number
+		//format() gave for @p code and @p seq: what the refresh wrote,
+		//not what the user typed in
+	bool isNumber(const QString &text, const QString &code, int seq)
+	{
+		if (code.isEmpty() || seq < 1) return false;
+		return text.startsWith(QStringLiteral("%1-%2-").arg(
+				code, QString::number(seq).rightJustified(
+						  3, QLatin1Char('0'))));
+	}
+
 	TerminalData::Signal signalOf(Terminal *terminal)
 	{
 		const QString name = terminal ? terminal->signalName() : QString();
@@ -307,13 +318,20 @@ void refreshProject(QETProject *project)
 		else
 			memory.remove(w.id);
 
+			//The number the wire held, to tell it from a typed text
+		const QString held_type = w.properties.m_type_seq_of;
+		const int held_seq = w.properties.m_type_seq;
 		if (!w.cable) {
 			ConductorProperties p = w.properties;
 			p.m_type_seq = seq;
 			p.m_type_seq_of = seq >= 1 ? w.type : QString();
-			p.text = text;
+				//Without a type a typed text stays: only a number
+				//written here goes
+			if (!text.isEmpty() || isNumber(p.text, held_type, held_seq))
+				p.text = text;
 				//A formula would write the text again
-			p.m_formula.clear();
+			if (!text.isEmpty())
+				p.m_formula.clear();
 			if (p != w.properties)
 				w.conductor->setProperties(p);
 			continue;
@@ -322,20 +340,29 @@ void refreshProject(QETProject *project)
 			//Like the numbers of single wires, the name of a cable is
 			//derived and is written without an undo step of its own,
 			//unless the user typed one in
+			//unless the user typed one in. Without a type the name
+			//derived from the number goes with it, so the number freed
+			//is not listed twice
 		QString name = text;
 		if (!text.isEmpty() && !w.cable->designationByHand())
 			w.cable->setDesignation(text);
 		else if (w.cable->designationByHand()
 				 && !w.cable->designation().isEmpty())
 			name = w.cable->designation();
+		else if (text.isEmpty() && !w.cable->designationByHand()
+				 && isNumber(w.cable->designation(), held_type, held_seq))
+			w.cable->setDesignation(QString());
 		for (const Core &core : std::as_const(w.cores)) {
 			ConductorProperties p = core.properties;
 			p.m_type_seq = seq;
 			p.m_type_seq_of = seq >= 1 ? w.type : QString();
-			p.text = name.isEmpty() ? QString()
-					: QStringLiteral("%1/%2").arg(
-						  name, QString::number(p.m_cable_slot + 1));
-			p.m_formula.clear();
+			if (!name.isEmpty())
+				p.text = QStringLiteral("%1/%2").arg(
+						name, QString::number(p.m_cable_slot + 1));
+			else if (isNumber(p.text, held_type, held_seq))
+				p.text.clear();
+			if (!name.isEmpty())
+				p.m_formula.clear();
 			if (p != core.properties)
 				core.conductor->setProperties(p);
 		}

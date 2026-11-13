@@ -294,7 +294,8 @@ class tst_tecsidecablenumber : public QObject
 		{
 			Rig r;
 			Conductor *c = r.draw(r.out(3), r.in(3));
-			QVERIFY(c->properties().text.isEmpty());
+				//No number written: the text is left as drawn
+			QCOMPARE(c->properties().text, ConductorProperties().text);
 			QCOMPARE(c->properties().m_type_seq, -1);
 		}
 
@@ -460,6 +461,30 @@ class tst_tecsidecablenumber : public QObject
 			QCOMPARE(c->properties().m_type_seq, -1);
 			r.settle();
 			QCOMPARE(c->properties().text, QStringLiteral("SDI-001-03-07"));
+		}
+
+		void untypedWireKeepsTypedText()
+		{
+			Rig r;
+				//HDM out to SDI in: no type comes from the sources
+			Conductor *c = r.draw(r.out(3), r.in(3));
+			QCOMPARE(c->properties().m_type_seq, -1);
+			const ConductorProperties old = c->properties();
+			ConductorProperties p = old;
+			p.text = QStringLiteral("SPARE-7");
+			r.diagram->undoStack().push(new QPropertyUndoCommand(
+				c, "properties", QVariant::fromValue(old),
+				QVariant::fromValue(p)));
+			r.settle();
+			r.settleEdit();
+			QCOMPARE(c->properties().text, QStringLiteral("SPARE-7"));
+
+				//A number the refresh wrote goes with the type
+			r.setOwnType(c, QStringLiteral("AUD"));
+			QCOMPARE(c->properties().text, QStringLiteral("AUD-001-03-07"));
+			r.setOwnType(c, QString());
+			QCOMPARE(c->properties().m_type_seq, -1);
+			QVERIFY(c->properties().text.isEmpty());
 		}
 
 		void duplicateSeqIsReassigned()

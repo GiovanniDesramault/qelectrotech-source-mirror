@@ -295,6 +295,41 @@ class tst_tecsideexport : public QObject
 			QCOMPARE(CableList::toCsv(&reopened), expected);
 		}
 
+		void untypedMulticoreDesignationCleared()
+		{
+			Rig r(4);
+			Cable *cable = r.project.newCable();
+			cable->setCoreCount(2);
+				//HDM out to SDI in: the core's own type is all it has
+			Conductor *core = r.drawAs(r.out(3), r.in(3),
+									   QStringLiteral("AUD"), cable, 0);
+			QCOMPARE(cable->designation(), QStringLiteral("AUD-001-03-07"));
+			r.setOwnType(core, QString());
+			QCOMPARE(core->properties().m_type_seq, -1);
+			QVERIFY(cable->designation().isEmpty());
+			QVERIFY(core->properties().text.isEmpty());
+				//The freed number goes to the next wire, once only
+			Conductor *single = r.drawAs(r.out(0), r.in(0),
+										 QStringLiteral("AUD"));
+			QCOMPARE(single->properties().text,
+					 QStringLiteral("AUD-001-03-07"));
+			QStringList numbers;
+			const QStringList rows = lines(CableList::toCsv(&r.project));
+			for (int i = 1 ; i < rows.size() ; ++i) {
+				const QString number = rows.at(i).split(
+						QLatin1Char(';')).value(1);
+				if (number != QStringLiteral("\"\""))
+					numbers << number;
+			}
+			QCOMPARE(numbers.count(QStringLiteral("\"AUD-001-03-07\"")), 1);
+
+				//A name typed in stays
+			cable->setDesignation(QStringLiteral("W12"));
+			cable->setDesignationByHand(true);
+			r.settleEdit();
+			QCOMPARE(cable->designation(), QStringLiteral("W12"));
+		}
+
 		void plainProjectIsUnchanged()
 		{
 			Rig r(5);
