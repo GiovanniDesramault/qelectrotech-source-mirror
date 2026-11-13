@@ -288,6 +288,7 @@ class QETDiagramEditor : public QETMainWindow
 		QAction* m_check_potentials = nullptr;
 		QAction* m_project_languages = nullptr;
 		QAction* m_manage_locations = nullptr; ///< TECside: the project's list of locations
+		QAction* m_draw_rack = nullptr; ///< TECside: the rack of one location, on a new folio
 
 		QAction
 		*m_tabbed_view_mode,		///< Display projects as tabs

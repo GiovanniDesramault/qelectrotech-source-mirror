@@ -78,6 +78,7 @@
 #include "ui/multielementinfowidget.h"
 #include "ui/projectlanguagesdialog.h"
 #include "tecside/tecsidelocationsdialog.h"
+#include "tecside/tecsiderackdrawer.h"
 #include "ui/textdestinationdialog.h"
 #include "qetgraphicsitem/independenttextitem.h"
 #include "QPropertyUndoCommand/qpropertyundocommand.h"
@@ -1251,6 +1252,16 @@ void QETDiagramEditor::setUpActions()
 		TecsideLocationsDialog::edit(view->project(), this);
 		slot_updateComplexActions();
 	});
+		//TECside: the front view of the rack of one location, on a new folio
+	m_draw_rack = new QAction(tr("Draw rack for location..."), this);
+	m_draw_rack->setData(QStringLiteral("draw_rack"));
+	m_draw_rack->setStatusTip(tr("Draw the devices of one location in a rack, on a new folio"));
+	ShortcutManager::instance().registerAction(m_draw_rack, "diagrameditor.draw_rack", tr("Diagram editors"), QKeySequence());
+	connect(m_draw_rack, &QAction::triggered, this, [this]() {
+		ProjectView *view = currentProjectView();
+		if (!view) return;
+		TecsideRackDrawer::drawWithDialog(view->project(), this);
+	});
 		//The saves a .qetdb keeps, and keeping them or not (QETDB-S6-SCOPE.md)
 	m_project_history = new QAction(tr("History of saves..."), this);
 	ShortcutManager::instance().registerAction(m_project_history, "diagrameditor.project_history", tr("Diagram editors"), QKeySequence());
@@ -2306,6 +2317,7 @@ void QETDiagramEditor::setUpMenu()
 	menu_project->addAction(m_check_potentials);
 	menu_project->addAction(m_project_languages);
 	menu_project->addAction(m_manage_locations);
+	menu_project->addAction(m_draw_rack);
 	menu_project -> addSeparator();
 	menu_project -> addAction(m_csv_export);
 	menu_project -> addAction(m_export_cable_list);
@@ -3931,6 +3943,9 @@ void QETDiagramEditor::slot_updateActions()
 	m_check_potentials->setEnabled(opened_project);
 	m_project_languages->setEnabled(opened_project);
 	m_manage_locations->setEnabled(editable_project);
+	m_draw_rack->setEnabled(editable_project
+							&& pv->project()->tecsideLocations().isEnabled()
+							&& pv->project()->tecsideLocations().count());
 	m_project_history             -> setEnabled(opened_project);
 	m_export_delivery             -> setEnabled(opened_project);
 	m_project_add_diagram         -> setEnabled(editable_project);
@@ -4421,8 +4436,11 @@ void QETDiagramEditor::addProjectView(ProjectView *project_view)
 	//Manage the adding  of diagram
 	connect(project_view, qOverload<DiagramView*>(&ProjectView::diagramAdded), this, &QETDiagramEditor::diagramWasAdded);
 
-	if (QETProject *project = project_view -> project())
+	if (QETProject *project = project_view -> project()) {
 		connect(project, &QETProject::readOnlyChanged, this, &QETDiagramEditor::slot_updateActions);
+			//TECside: Draw rack follows the list of locations, undone too
+		connect(project, &QETProject::tecsideLocationsChanged, this, &QETDiagramEditor::slot_updateActions);
+	}
 
 	//Manage request for edit or find element and titleblock
 	connect (project_view, &ProjectView::findElementRequired,
