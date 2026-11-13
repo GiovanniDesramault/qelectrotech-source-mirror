@@ -38,6 +38,7 @@
 #include <utils/qetutils.h>
 #include <wirehops.h>
 
+#include <QFontMetricsF>
 #include <QMultiHash>
 #include <QtDebug>
 
@@ -1816,17 +1817,24 @@ void Conductor::placeTextsAtEnds()
 			item->setRotation(horizontal ? m_properties.horiz_rotate_text
 										 : m_properties.verti_rotate_text);
 		item->setPos(0, 0);
-		const QRectF r = item->mapRectToParent(item->boundingRect());
+			//Placed by the ink of the characters, not the text box with
+			//its margins: the foot of the digits sits right on the wire
+		const qreal margin = item->document()->documentMargin();
+		const QFontMetricsF metrics(item->font());
+		const QRectF ink(margin, margin + metrics.ascent() - metrics.capHeight(),
+						 item->boundingRect().width() - 2 * margin,
+						 metrics.capHeight());
+		const QRectF r = item->mapRectToParent(ink);
 		QPointF top_left;
 		if (horizontal)
 		{
 			top_left.setX(inwards.x() >= terminal.x()
 						  ? terminal.x() + 4 : terminal.x() - 4 - r.width());
-			top_left.setY(terminal.y() - r.height());
+			top_left.setY(terminal.y() - 1 - r.height());
 		}
 		else
 		{
-			top_left.setX(terminal.x() + 2);
+			top_left.setX(terminal.x() + 1);
 			top_left.setY(inwards.y() >= terminal.y()
 						  ? terminal.y() + 4 : terminal.y() - 4 - r.height());
 		}
