@@ -77,6 +77,7 @@
 #include "project/projectpropertieshandler.h"
 #include "ui/multielementinfowidget.h"
 #include "ui/projectlanguagesdialog.h"
+#include "tecside/tecsidelocationsdialog.h"
 #include "ui/textdestinationdialog.h"
 #include "qetgraphicsitem/independenttextitem.h"
 #include "QPropertyUndoCommand/qpropertyundocommand.h"
@@ -664,6 +665,24 @@ void QETDiagramEditor::setUpActions()
 	connect(m_paste_element_info, &QAction::triggered,
 			this, &QETDiagramEditor::pasteElementInformations);
 
+		//TECside: one location for all the selected elements, offered
+		//when the project keeps a list of locations
+	m_set_location = new QAction(tr("Set location..."), this);
+	m_set_location->setStatusTip(tr("Give the selected elements one location", "status bar tip"));
+	m_set_location->setEnabled(false);
+	m_set_location->setData(QStringLiteral("set_location"));
+	ShortcutManager::instance().registerAction(m_set_location, "diagrameditor.set_location", tr("Diagram editors"), QKeySequence());
+	connect(m_set_location, &QAction::triggered, this, [this]() {
+		DiagramView *dv = currentDiagramView();
+		if (!dv || !dv->diagram() || dv->diagram()->isReadOnly())
+			return;
+		QList<Element *> elements;
+		for (Element *element : DiagramContent(dv->diagram()).m_elements)
+			if (MultiElementInfoWidget::takesInformations(element))
+				elements << element;
+		TecsideSetLocationDialog::edit(dv->diagram()->project(), elements, this);
+	});
+
 	//Format painter actions
 	m_copy_text_format  = new QAction(QET::Icons::CopyElementTextFormat,  tr("Copy text format"), this);
 	m_apply_text_format = new QAction(QET::Icons::ApplyElementTextFormat, tr("Apply text format"), this);
@@ -1220,6 +1239,17 @@ void QETDiagramEditor::setUpActions()
 		ProjectLanguagesDialog dialog(project->languages(), project->translatableTexts(), this);
 		if (dialog.exec() == QDialog::Accepted)
 			project->setLanguages(dialog.languages());
+	});
+		//TECside: the project's list of locations; OK turns it on
+	m_manage_locations = new QAction(tr("Manage locations..."), this);
+	m_manage_locations->setData(QStringLiteral("manage_locations"));
+	m_manage_locations->setStatusTip(tr("Number and name the locations of the project, shown above the title block"));
+	ShortcutManager::instance().registerAction(m_manage_locations, "diagrameditor.manage_locations", tr("Diagram editors"), QKeySequence());
+	connect(m_manage_locations, &QAction::triggered, this, [this]() {
+		ProjectView *view = currentProjectView();
+		if (!view) return;
+		TecsideLocationsDialog::edit(view->project(), this);
+		slot_updateComplexActions();
 	});
 		//The saves a .qetdb keeps, and keeping them or not (QETDB-S6-SCOPE.md)
 	m_project_history = new QAction(tr("History of saves..."), this);
@@ -2188,6 +2218,7 @@ void QETDiagramEditor::setUpMenu()
 	menu_edition -> addAction(m_text_clearance);
 	menu_edition -> addAction(m_paste_origin);
 	menu_edition -> addAction(m_paste_element_info);
+	menu_edition -> addAction(m_set_location);
 	menu_edition -> addAction(m_duplicate);
 	menu_edition -> addAction(m_configure_duplicate);
 	menu_edition -> addSeparator();
@@ -2274,6 +2305,7 @@ void QETDiagramEditor::setUpMenu()
 	menu_project->addAction(m_find_duplicate_labels);
 	menu_project->addAction(m_check_potentials);
 	menu_project->addAction(m_project_languages);
+	menu_project->addAction(m_manage_locations);
 	menu_project -> addSeparator();
 	menu_project -> addAction(m_csv_export);
 	menu_project -> addAction(m_export_cable_list);
@@ -3898,6 +3930,7 @@ void QETDiagramEditor::slot_updateActions()
 	m_find_duplicate_labels->setEnabled(opened_project);
 	m_check_potentials->setEnabled(opened_project);
 	m_project_languages->setEnabled(opened_project);
+	m_manage_locations->setEnabled(editable_project);
 	m_project_history             -> setEnabled(opened_project);
 	m_export_delivery             -> setEnabled(opened_project);
 	m_project_add_diagram         -> setEnabled(editable_project);
@@ -3992,6 +4025,7 @@ void QETDiagramEditor::slot_updateComplexActions()
 			    << m_cut
 			    << m_copy
 			    << m_paste_element_info
+			    << m_set_location
 			    << m_duplicate
 			    << m_delete_selection
 			    << m_rotate_selection
@@ -4029,6 +4063,9 @@ void QETDiagramEditor::slot_updateComplexActions()
 	m_apply_text_format->setEnabled(!ro && ((selected_elements_count >= 1 && ElementTextFormatPattern::hasPattern()) ||
 	                                        (selected_dimensions_count >= 1 && DimensionFormatPattern::hasPattern())));
 	m_place_texts->setEnabled(!ro && selected_elements_count >= 1);
+	m_set_location->setEnabled(!ro && diagram_->project()
+							   && diagram_->project()->tecsideLocations().isEnabled()
+							   && !selectedInformationElements(diagram_).isEmpty());
 	m_select_same_symbols->setEnabled(selected_elements_count >= 1);
 	{
 		bool any = false, all = true;

@@ -355,6 +355,8 @@ set(QET_SRC_FILES
   ${QET_DIR}/sources/tecside/tecsidecablenumber.h
   ${QET_DIR}/sources/tecside/tecsidelocations.cpp
   ${QET_DIR}/sources/tecside/tecsidelocations.h
+  ${QET_DIR}/sources/tecside/tecsidelocationsdialog.cpp
+  ${QET_DIR}/sources/tecside/tecsidelocationsdialog.h
   ${QET_DIR}/sources/titleblockcell.cpp
   ${QET_DIR}/sources/titleblockcell.h
   ${QET_DIR}/sources/titleblockproperties.cpp

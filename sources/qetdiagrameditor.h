@@ -254,6 +254,7 @@ class QETDiagramEditor : public QETMainWindow
 		*m_cut,                     ///< Cut selection to clipboard
 		*m_copy,                    ///< Copy selection to clipboard
 		*m_paste_element_info,      ///< Copy the information of the copied element onto the selected elements (#1375)
+		*m_set_location = nullptr,  ///< TECside: give the selected elements one location
 		*m_insert_last_element = nullptr, ///< Place the last placed element again
 		*m_copy_text_format = nullptr,  ///< Copy label/text formatting template
 		*m_apply_text_format = nullptr, ///< Apply label/text formatting template
@@ -286,6 +287,7 @@ class QETDiagramEditor : public QETMainWindow
 		QAction* m_find_duplicate_labels = nullptr;
 		QAction* m_check_potentials = nullptr;
 		QAction* m_project_languages = nullptr;
+		QAction* m_manage_locations = nullptr; ///< TECside: the project's list of locations
 
 		QAction
 		*m_tabbed_view_mode,		///< Display projects as tabs

@@ -26,11 +26,14 @@
 #include "qetproject.h"
 #include "qetresult.h"
 #include "tecside/tecsidelocations.h"
+#include "tecside/tecsidelocationsdialog.h"
 
+#include <QComboBox>
 #include <QDomDocument>
 #include <QFile>
 #include <QImage>
 #include <QPainter>
+#include <QTableWidget>
 #include <QTemporaryDir>
 #include <QUndoStack>
 #include <QtTest>
@@ -63,7 +66,13 @@ class tst_tecsidelocations : public QObject
 
 		Element *device(const QString &name)
 		{
-			auto *collection = project.embeddedElementCollection();
+			return placeDevice(&project, diagram, name);
+		}
+
+		static Element *placeDevice(QETProject *project, Diagram *diagram,
+									const QString &name)
+		{
+			auto *collection = project->embeddedElementCollection();
 			QDomDocument definition;
 			definition.setContent(QStringLiteral(
 				"<definition type=\"element\" link_type=\"simple\" uuid=\"%1\" "
@@ -78,7 +87,7 @@ class tst_tecsidelocations : public QObject
 			int state = 0;
 			Element *element = ElementFactory::Instance()->createElement(
 				ElementsLocation(QStringLiteral("embed://import/%1.elmt").arg(name),
-								 &project),
+								 project),
 				nullptr, &state);
 			if (state || !element) return nullptr;
 			diagram->addItem(element);
@@ -313,6 +322,67 @@ class tst_tecsidelocations : public QObject
 			QVERIFY(r.project.tecsideLocations().isEnabled());
 			r.project.undoStack()->undo();
 			QVERIFY(!r.project.tecsideLocations().isEnabled());
+		}
+
+		void dialogRenumbers()
+		{
+			TecsideLocationsDialog dialog(sample());
+			auto *table = dialog.findChild<QTableWidget *>();
+			QVERIFY(table);
+			QCOMPARE(table->rowCount(), 2);
+			QVERIFY(dialog.renumbering().isEmpty());
+			QCOMPARE(dialog.locations(), sample());
+			table->item(0, 0)->setText(QStringLiteral("5"));
+			const QHash<QString, QString> expected{
+				{QStringLiteral("01"), QStringLiteral("05")}};
+			QCOMPARE(dialog.renumbering(), expected);
+			QCOMPARE(dialog.locations().list().at(0).number, QStringLiteral("05"));
+		}
+
+		void dialogTurnsOn()
+		{
+			TecsideLocationsDialog dialog{TecsideLocations()};
+			const TecsideLocations locations = dialog.locations();
+			QVERIFY(locations.isEnabled());
+			QCOMPARE(locations.count(), 0);
+		}
+
+		void comboWritesTheNumberOnly()
+		{
+			QComboBox combo;
+			TecsideLocationModel::setUpCombo(&combo,
+				TecsideLocationModel::choicesOf(sample()));
+			QVERIFY(combo.isEditable());
+			QCOMPARE(combo.count(), 2);
+			QCOMPARE(combo.model()->index(1, 0).data(Qt::DisplayRole).toString(),
+					 QStringLiteral("02 \u2013 Podium L"));
+			combo.setCurrentIndex(1);
+			QCOMPARE(combo.currentText(), QStringLiteral("02"));
+				//A place typed by hand stays as typed
+			combo.setEditText(QStringLiteral("09"));
+			QCOMPARE(combo.currentText(), QStringLiteral("09"));
+			QVERIFY(TecsideLocationModel::choicesOf(TecsideLocations()).isEmpty());
+		}
+
+		void setLocationActionOnlyWhenOn()
+		{
+			Diagram *diagram = QetAppTest::diagram();
+			QVERIFY(diagram);
+			QETProject *project = diagram->project();
+			QAction *set = QetAppTest::action(QStringLiteral("set_location"));
+			QAction *manage = QetAppTest::action(QStringLiteral("manage_locations"));
+			QVERIFY(set);
+			QVERIFY(manage);
+			QVERIFY(manage->isEnabled());
+			Element *element = Rig::placeDevice(project, diagram, QStringLiteral("selected"));
+			QVERIFY(element);
+			element->setSelected(true);
+			QTRY_VERIFY(!set->isEnabled());
+			project->setTecsideLocations(sample());
+			element->setSelected(false);
+			element->setSelected(true);
+			QTRY_VERIFY(set->isEnabled());
+			project->setTecsideLocations(TecsideLocations());
 		}
 
 		void bulkSetAndUndo()
