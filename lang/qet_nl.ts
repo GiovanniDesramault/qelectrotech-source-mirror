@@ -1964,6 +1964,46 @@ If you confirm, the other cable will lose these cores. Do you want to continue?<
         <source>Used cores</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <location filename="../sources/cablelist/cablelistrows.cpp"/>
+        <source>Type</source>
+        <translation>Type</translation>
+    </message>
+    <message>
+        <location filename="../sources/cablelist/cablelistrows.cpp"/>
+        <source>Number</source>
+        <translation>Nummer</translation>
+    </message>
+    <message>
+        <location filename="../sources/cablelist/cablelistrows.cpp"/>
+        <source>From device</source>
+        <translation>Van toestel</translation>
+    </message>
+    <message>
+        <location filename="../sources/cablelist/cablelistrows.cpp"/>
+        <source>From connector</source>
+        <translation>Van connector</translation>
+    </message>
+    <message>
+        <location filename="../sources/cablelist/cablelistrows.cpp"/>
+        <source>From location</source>
+        <translation>Van locatie</translation>
+    </message>
+    <message>
+        <location filename="../sources/cablelist/cablelistrows.cpp"/>
+        <source>To device</source>
+        <translation>Naar toestel</translation>
+    </message>
+    <message>
+        <location filename="../sources/cablelist/cablelistrows.cpp"/>
+        <source>To connector</source>
+        <translation>Naar connector</translation>
+    </message>
+    <message>
+        <location filename="../sources/cablelist/cablelistrows.cpp"/>
+        <source>To location</source>
+        <translation>Naar locatie</translation>
+    </message>
 </context>
 <context>
     <name>CableListModelPropertiesWidget</name>

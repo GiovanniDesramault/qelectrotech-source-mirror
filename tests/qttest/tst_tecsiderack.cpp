@@ -480,6 +480,37 @@ class tst_tecsiderack : public QObject
 			QCOMPARE(fronts(again).size(), 4);
 		}
 
+		void frontFollowsTheLabel()
+		{
+			QVERIFY(writeRackSymbols());
+			QETProject project;
+			TecsideLocations locations;
+			locations.setEnabled(true);
+			locations.setList({{QStringLiteral("03"), QStringLiteral("Regie")}});
+			project.setTecsideLocations(locations);
+			Diagram *folio = project.addNewDiagram();
+			QVERIFY(placeDevice(&project, folio, QStringLiteral("dsp"), QStringLiteral("DSP1"),
+								QStringLiteral("03"), QPointF(100, 100)));
+			QVERIFY(placeDevice(&project, folio, QStringLiteral("dsp"), QStringLiteral("DSP2"),
+								QStringLiteral("03"), QPointF(100, 300)));
+			Diagram *rack = TecsideRackDrawer::draw(&project, QStringLiteral("03"),
+													TecsideRackDrawer::findSymbols(company()));
+			QVERIFY(rack);
+			Element *dsp1 = nullptr;
+			for (Element *element : folio->elements())
+				if (info(element, QETInformation::ELMT_LABEL) == QLatin1String("DSP1"))
+					dsp1 = element;
+			QVERIFY(dsp1);
+
+			DiagramContext context = dsp1->elementInformations();
+			context.addValue(QETInformation::ELMT_LABEL, QStringLiteral("DSP7"));
+			dsp1->setElementInformations(context);
+			QStringList labels;
+			for (Element *front : fronts(rack))
+				labels << info(front, QETInformation::ELMT_LABEL);
+			QCOMPARE(labels, (QStringList{QStringLiteral("DSP7"), QStringLiteral("DSP2")}));
+		}
+
 		void tellsWhatIsMissing()
 		{
 			QETProject project;

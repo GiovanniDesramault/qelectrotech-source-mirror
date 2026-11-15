@@ -369,6 +369,31 @@ Diagram *TecsideRackDrawer::draw(QETProject *project, const QString &number,
 	return diagram;
 }
 
+void TecsideRackDrawer::followLabel(Element *device, const QString &old_label)
+{
+	Diagram *diagram = device ? device->diagram() : nullptr;
+	if (!diagram || !diagram->project() || isRackSymbol(device)
+		|| diagram->project()->state() == QETProject::ProjectParsingRunning)
+		return;
+	const QString front_id = deviceId(device) + QStringLiteral("_front");
+	const QString location = device->elementInformations()
+			.value(QETInformation::ELMT_LOCATION).toString();
+	const QString label = labelOf(device);
+	for (Diagram *folio : diagram->project()->folios()) {
+		if (!folio)
+			continue;
+		for (Element *front : folio->elements()) {
+			const DiagramContext info = front->elementInformations();
+			if (deviceId(front) != front_id
+				|| info.value(QETInformation::ELMT_LOCATION).toString() != location
+				|| info.value(QETInformation::ELMT_LABEL).toString() != old_label)
+				continue;
+			setInfo(front, label, location);
+			return;	//one front per device, even for twins without a label
+		}
+	}
+}
+
 void TecsideRackDrawer::prepareFolio(Diagram *diagram, const QString &title,
 									 const QSizeF &size, QPointF *origin)
 {

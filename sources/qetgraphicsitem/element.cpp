@@ -68,6 +68,7 @@ static const QString plcTerminalKeys[] = {
 #include <positionorder.h>
 #include <qetversion.h>
 #include "qgraphicsitemutility.h"
+#include "tecside/tecsiderackdrawer.h"
 #include <QDebug>
 
 #include <QDomElement>
@@ -2472,6 +2473,8 @@ void Element::setElementInformations(DiagramContext dc)
 	notifyTerminalStrip(this);
 
 	bool label_changed = old_info.value("label").toString() != dc.value("label").toString();
+	if (label_changed)	//TECside: its rack front takes the new label
+		TecsideRackDrawer::followLabel(this, old_info.value("label").toString());
 	if (label_changed && (linkType() & Element::AllReport)) {
 		if (diagram() && diagram()->project() && diagram()->project()->chainedReports()) {
 			diagram()->project()->scheduleAutoLink();

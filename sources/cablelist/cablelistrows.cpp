@@ -152,7 +152,9 @@ QStringList tecsideEnd(Terminal *terminal)
 				QString()};
 	}
 	const DiagramContext info = element->elementInformations();
-	return {info.value(QETInformation::ELMT_LABEL).toString(),
+	const QString label = info.value(QETInformation::ELMT_LABEL).toString();
+		//A device without a label is named by its model
+	return {label.isEmpty() ? element->name() : label,
 			terminal->name(),
 			info.value(QStringLiteral("location")).toString()};
 }

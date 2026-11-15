@@ -66,6 +66,12 @@ namespace TecsideRackDrawer
 		/// company collection
 	void drawWithDialog(QETProject *project, QWidget *parent);
 
+		/// The label of @p device went from @p old_label to its own: the
+		/// fronts drawn for it (its front, same location, that old label)
+		/// on the folios built so far take the new one. Not undone on its
+		/// own: undoing the device's label calls it again the other way.
+	void followLabel(Element *device, const QString &old_label);
+
 		/// Make the new folio @p diagram big enough for @p size under
 		/// @p title; @p origin gets the top left of the free area
 	void prepareFolio(Diagram *diagram, const QString &title, const QSizeF &size,
