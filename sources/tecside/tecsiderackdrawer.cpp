@@ -369,6 +369,12 @@ Diagram *TecsideRackDrawer::draw(QETProject *project, const QString &number,
 	return diagram;
 }
 
+void TecsideRackDrawer::prepareFolio(Diagram *diagram, const QString &title,
+									 const QSizeF &size, QPointF *origin)
+{
+	setUpFolio(diagram, title, size, origin);
+}
+
 void TecsideRackDrawer::drawWithDialog(QETProject *project, QWidget *parent)
 {
 	if (!project || project->isReadOnly())

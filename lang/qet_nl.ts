@@ -16886,6 +16886,42 @@ They are not shown, but they are kept in the file as they are, and join their te
     </message>
     <message>
         <location filename="../sources/qetdiagrameditor.cpp"/>
+        <source>Replace with...</source>
+        <translation>Vervangen door...</translation>
+    </message>
+    <message>
+        <location filename="../sources/qetdiagrameditor.cpp"/>
+        <source>Put another symbol in the place of the selected one, its wires following by terminal name</source>
+        <comment>status bar tip</comment>
+        <translation>Zet een ander symbool op de plaats van het geselecteerde; de kabels volgen op naam van de aansluiting</translation>
+    </message>
+    <message>
+        <location filename="../sources/qetdiagrameditor.cpp"/>
+        <source>Export materials list...</source>
+        <translation>Materiaallijst exporteren...</translation>
+    </message>
+    <message>
+        <location filename="../sources/qetdiagrameditor.cpp"/>
+        <source>Write the devices and cables of the project, counted per location, to a CSV file</source>
+        <translation>Schrijf de toestellen en kabels van het project, geteld per locatie, naar een CSV-bestand</translation>
+    </message>
+    <message>
+        <location filename="../sources/qetdiagrameditor.cpp"/>
+        <source>Draw materials list</source>
+        <translation>Materiaallijst tekenen</translation>
+    </message>
+    <message>
+        <location filename="../sources/qetdiagrameditor.cpp"/>
+        <source>Put the devices and cables of the project, counted per location, on a new folio</source>
+        <translation>Zet de toestellen en kabels van het project, geteld per locatie, op een nieuw blad</translation>
+    </message>
+    <message>
+        <location filename="../sources/qetdiagrameditor.cpp"/>
+        <source>The project has no devices or cables to list.</source>
+        <translation>Het project heeft geen toestellen of kabels om op te lijsten.</translation>
+    </message>
+    <message>
+        <location filename="../sources/qetdiagrameditor.cpp"/>
         <source>Draw the devices of one location in a rack, on a new folio</source>
         <translation>Teken de toestellen van één locatie in een rack, op een nieuwe folio</translation>
     </message>
@@ -28825,6 +28861,166 @@ Door de associatie van de naam &quot;volta&quot; met de waarde &quot;1745&quot; 
         <location filename="../sources/tecside/tecsidelocationsdialog.cpp"/>
         <source>Location:</source>
         <translation>Locatie:</translation>
+    </message>
+</context>
+<context>
+    <name>TecsideMaterials</name>
+    <message>
+        <location filename="../sources/tecside/tecsidematerials.cpp"/>
+        <source>SDI</source>
+        <translation>SDI</translation>
+    </message>
+    <message>
+        <location filename="../sources/tecside/tecsidematerials.cpp"/>
+        <source>Network</source>
+        <translation>Netwerk</translation>
+    </message>
+    <message>
+        <location filename="../sources/tecside/tecsidematerials.cpp"/>
+        <source>Fiber</source>
+        <translation>Fiber</translation>
+    </message>
+    <message>
+        <location filename="../sources/tecside/tecsidematerials.cpp"/>
+        <source>Audio</source>
+        <translation>Audio</translation>
+    </message>
+    <message>
+        <location filename="../sources/tecside/tecsidematerials.cpp"/>
+        <source>Speaker</source>
+        <translation>Speaker</translation>
+    </message>
+    <message>
+        <location filename="../sources/tecside/tecsidematerials.cpp"/>
+        <source>DMX / AES</source>
+        <translation>DMX / AES</translation>
+    </message>
+    <message>
+        <location filename="../sources/tecside/tecsidematerials.cpp"/>
+        <source>Power</source>
+        <translation>Stroom</translation>
+    </message>
+    <message>
+        <location filename="../sources/tecside/tecsidematerials.cpp"/>
+        <source>DC power</source>
+        <translation>DC-voeding</translation>
+    </message>
+    <message>
+        <location filename="../sources/tecside/tecsidematerials.cpp"/>
+        <source>LED</source>
+        <translation>LED</translation>
+    </message>
+    <message>
+        <location filename="../sources/tecside/tecsidematerials.cpp"/>
+        <source>Cable without type</source>
+        <translation>Kabel zonder type</translation>
+    </message>
+    <message>
+        <location filename="../sources/tecside/tecsidematerials.cpp"/>
+        <source>Multicore %1</source>
+        <translation>Multicore %1</translation>
+    </message>
+    <message>
+        <location filename="../sources/tecside/tecsidematerials.cpp"/>
+        <source>No location</source>
+        <translation>Geen locatie</translation>
+    </message>
+    <message>
+        <location filename="../sources/tecside/tecsidematerials.cpp"/>
+        <source>Location</source>
+        <translation>Locatie</translation>
+    </message>
+    <message>
+        <location filename="../sources/tecside/tecsidematerials.cpp"/>
+        <source>Kind</source>
+        <translation>Soort</translation>
+    </message>
+    <message>
+        <location filename="../sources/tecside/tecsidematerials.cpp"/>
+        <source>Item</source>
+        <translation>Omschrijving</translation>
+    </message>
+    <message>
+        <location filename="../sources/tecside/tecsidematerials.cpp"/>
+        <source>Quantity</source>
+        <translation>Aantal</translation>
+    </message>
+    <message>
+        <location filename="../sources/tecside/tecsidematerials.cpp"/>
+        <source>Cable</source>
+        <translation>Kabel</translation>
+    </message>
+    <message>
+        <location filename="../sources/tecside/tecsidematerials.cpp"/>
+        <source>Device</source>
+        <translation>Toestel</translation>
+    </message>
+    <message>
+        <location filename="../sources/tecside/tecsidematerials.cpp"/>
+        <source>Cable %1</source>
+        <translation>Kabel %1</translation>
+    </message>
+    <message>
+        <location filename="../sources/tecside/tecsidematerials.cpp"/>
+        <source> (continued)</source>
+        <translation> (vervolg)</translation>
+    </message>
+    <message>
+        <location filename="../sources/tecside/tecsidematerials.cpp"/>
+        <source>Draw the materials list</source>
+        <translation>Materiaallijst tekenen</translation>
+    </message>
+    <message>
+        <location filename="../sources/tecside/tecsidematerials.cpp"/>
+        <source>Materials list</source>
+        <translation>Materiaallijst</translation>
+    </message>
+    <message>
+        <location filename="../sources/tecside/tecsidematerials.cpp"/>
+        <source>Export materials list</source>
+        <translation>Materiaallijst exporteren</translation>
+    </message>
+    <message>
+        <location filename="../sources/tecside/tecsidematerials.cpp"/>
+        <source>materials list_</source>
+        <translation>materiaallijst_</translation>
+    </message>
+    <message>
+        <location filename="../sources/tecside/tecsidematerials.cpp"/>
+        <source>CSV files (*.csv)</source>
+        <translation>CSV-bestanden (*.csv)</translation>
+    </message>
+    <message>
+        <location filename="../sources/tecside/tecsidematerials.cpp"/>
+        <source>Unable to write %1.
+%2</source>
+        <translation>Kan %1 niet schrijven.
+%2</translation>
+    </message>
+</context>
+<context>
+    <name>TecsideReplace</name>
+    <message>
+        <location filename="../sources/tecside/tecsidereplace.cpp"/>
+        <source>Replace %1 by %2</source>
+        <translation>%1 vervangen door %2</translation>
+    </message>
+    <message>
+        <location filename="../sources/tecside/tecsidereplace.cpp"/>
+        <source>Replace with</source>
+        <translation>Vervangen door</translation>
+    </message>
+    <message>
+        <location filename="../sources/tecside/tecsidereplace.cpp"/>
+        <source>This symbol could not be loaded.</source>
+        <translation>Dit symbool kon niet geladen worden.</translation>
+    </message>
+    <message>
+        <location filename="../sources/tecside/tecsidereplace.cpp"/>
+        <source>The new symbol has no terminal with the name of these, so their wires were removed:
+%1</source>
+        <translation>Het nieuwe symbool heeft geen aansluiting met de naam van deze, dus hun kabels zijn verwijderd:
+%1</translation>
     </message>
 </context>
 <context>

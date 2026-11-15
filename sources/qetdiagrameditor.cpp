@@ -79,6 +79,8 @@
 #include "ui/projectlanguagesdialog.h"
 #include "tecside/tecsidelocationsdialog.h"
 #include "tecside/tecsiderackdrawer.h"
+#include "tecside/tecsidereplace.h"
+#include "tecside/tecsidematerials.h"
 #include "ui/textdestinationdialog.h"
 #include "qetgraphicsitem/independenttextitem.h"
 #include "QPropertyUndoCommand/qpropertyundocommand.h"
@@ -684,6 +686,21 @@ void QETDiagramEditor::setUpActions()
 		TecsideSetLocationDialog::edit(dv->diagram()->project(), elements, this);
 	});
 
+		//TECside: another symbol in the place of the selected one
+	m_replace_element = new QAction(tr("Replace with..."), this);
+	m_replace_element->setStatusTip(tr("Put another symbol in the place of the selected one, its wires following by terminal name", "status bar tip"));
+	m_replace_element->setEnabled(false);
+	m_replace_element->setData(QStringLiteral("replace_element"));
+	ShortcutManager::instance().registerAction(m_replace_element, "diagrameditor.replace_element", tr("Diagram editors"), QKeySequence());
+	connect(m_replace_element, &QAction::triggered, this, [this]() {
+		DiagramView *dv = currentDiagramView();
+		if (!dv || !dv->diagram())
+			return;
+		const QList<Element *> elements = DiagramContent(dv->diagram()).m_elements;
+		if (elements.size() == 1)
+			TecsideReplace::replaceWithDialog(elements.first(), this);
+	});
+
 	//Format painter actions
 	m_copy_text_format  = new QAction(QET::Icons::CopyElementTextFormat,  tr("Copy text format"), this);
 	m_apply_text_format = new QAction(QET::Icons::ApplyElementTextFormat, tr("Apply text format"), this);
@@ -1261,6 +1278,25 @@ void QETDiagramEditor::setUpActions()
 		ProjectView *view = currentProjectView();
 		if (!view) return;
 		TecsideRackDrawer::drawWithDialog(view->project(), this);
+	});
+		//TECside: what to load, devices per model and cables per type, by place
+	m_export_materials = new QAction(tr("Export materials list..."), this);
+	m_export_materials->setData(QStringLiteral("export_materials"));
+	m_export_materials->setStatusTip(tr("Write the devices and cables of the project, counted per location, to a CSV file"));
+	ShortcutManager::instance().registerAction(m_export_materials, "diagrameditor.export_materials", tr("Diagram editors"), QKeySequence());
+	connect(m_export_materials, &QAction::triggered, this, [this]() {
+		if (ProjectView *view = currentProjectView())
+			TecsideMaterials::exportWithDialog(view->project(), this);
+	});
+	m_draw_materials = new QAction(tr("Draw materials list"), this);
+	m_draw_materials->setData(QStringLiteral("draw_materials"));
+	m_draw_materials->setStatusTip(tr("Put the devices and cables of the project, counted per location, on a new folio"));
+	ShortcutManager::instance().registerAction(m_draw_materials, "diagrameditor.draw_materials", tr("Diagram editors"), QKeySequence());
+	connect(m_draw_materials, &QAction::triggered, this, [this]() {
+		ProjectView *view = currentProjectView();
+		if (view && !TecsideMaterials::draw(view->project()))
+			QMessageBox::information(this, tr("Draw materials list"),
+									 tr("The project has no devices or cables to list."));
 	});
 		//The saves a .qetdb keeps, and keeping them or not (QETDB-S6-SCOPE.md)
 	m_project_history = new QAction(tr("History of saves..."), this);
@@ -2230,6 +2266,7 @@ void QETDiagramEditor::setUpMenu()
 	menu_edition -> addAction(m_paste_origin);
 	menu_edition -> addAction(m_paste_element_info);
 	menu_edition -> addAction(m_set_location);
+	menu_edition -> addAction(m_replace_element);
 	menu_edition -> addAction(m_duplicate);
 	menu_edition -> addAction(m_configure_duplicate);
 	menu_edition -> addSeparator();
@@ -2318,6 +2355,8 @@ void QETDiagramEditor::setUpMenu()
 	menu_project->addAction(m_project_languages);
 	menu_project->addAction(m_manage_locations);
 	menu_project->addAction(m_draw_rack);
+	menu_project->addAction(m_export_materials);
+	menu_project->addAction(m_draw_materials);
 	menu_project -> addSeparator();
 	menu_project -> addAction(m_csv_export);
 	menu_project -> addAction(m_export_cable_list);
@@ -3946,6 +3985,8 @@ void QETDiagramEditor::slot_updateActions()
 	m_draw_rack->setEnabled(editable_project
 							&& pv->project()->tecsideLocations().isEnabled()
 							&& pv->project()->tecsideLocations().count());
+	m_export_materials->setEnabled(opened_project);
+	m_draw_materials->setEnabled(editable_project);
 	m_project_history             -> setEnabled(opened_project);
 	m_export_delivery             -> setEnabled(opened_project);
 	m_project_add_diagram         -> setEnabled(editable_project);
@@ -4041,6 +4082,7 @@ void QETDiagramEditor::slot_updateComplexActions()
 			    << m_copy
 			    << m_paste_element_info
 			    << m_set_location
+			    << m_replace_element
 			    << m_duplicate
 			    << m_delete_selection
 			    << m_rotate_selection
@@ -4081,6 +4123,7 @@ void QETDiagramEditor::slot_updateComplexActions()
 	m_set_location->setEnabled(!ro && diagram_->project()
 							   && diagram_->project()->tecsideLocations().isEnabled()
 							   && !selectedInformationElements(diagram_).isEmpty());
+	m_replace_element->setEnabled(!ro && selected_elements_count == 1);
 	m_select_same_symbols->setEnabled(selected_elements_count >= 1);
 	{
 		bool any = false, all = true;

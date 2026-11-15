@@ -22,6 +22,9 @@
 #include <QMap>
 #include <QString>
 
+class QPointF;
+class QSizeF;
+
 class Diagram;
 class Element;
 class QETProject;
@@ -62,6 +65,11 @@ namespace TecsideRackDrawer
 		/// Ask for a place of @p project and draw its rack, from the
 		/// company collection
 	void drawWithDialog(QETProject *project, QWidget *parent);
+
+		/// Make the new folio @p diagram big enough for @p size under
+		/// @p title; @p origin gets the top left of the free area
+	void prepareFolio(Diagram *diagram, const QString &title, const QSizeF &size,
+					  QPointF *origin);
 }
 
 #endif

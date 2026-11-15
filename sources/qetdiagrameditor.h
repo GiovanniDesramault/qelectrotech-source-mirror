@@ -255,6 +255,7 @@ class QETDiagramEditor : public QETMainWindow
 		*m_copy,                    ///< Copy selection to clipboard
 		*m_paste_element_info,      ///< Copy the information of the copied element onto the selected elements (#1375)
 		*m_set_location = nullptr,  ///< TECside: give the selected elements one location
+		*m_replace_element = nullptr,  ///< TECside: another symbol in the place of the selected one, wiring kept
 		*m_insert_last_element = nullptr, ///< Place the last placed element again
 		*m_copy_text_format = nullptr,  ///< Copy label/text formatting template
 		*m_apply_text_format = nullptr, ///< Apply label/text formatting template
@@ -289,6 +290,8 @@ class QETDiagramEditor : public QETMainWindow
 		QAction* m_project_languages = nullptr;
 		QAction* m_manage_locations = nullptr; ///< TECside: the project's list of locations
 		QAction* m_draw_rack = nullptr; ///< TECside: the rack of one location, on a new folio
+		QAction* m_export_materials = nullptr; ///< TECside: devices and cables to load, to CSV
+		QAction* m_draw_materials = nullptr; ///< TECside: devices and cables to load, on a new folio
 
 		QAction
 		*m_tabbed_view_mode,		///< Display projects as tabs

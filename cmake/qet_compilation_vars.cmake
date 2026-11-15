@@ -361,6 +361,10 @@ set(QET_SRC_FILES
   ${QET_DIR}/sources/tecside/tecsiderack.h
   ${QET_DIR}/sources/tecside/tecsiderackdrawer.cpp
   ${QET_DIR}/sources/tecside/tecsiderackdrawer.h
+  ${QET_DIR}/sources/tecside/tecsidereplace.cpp
+  ${QET_DIR}/sources/tecside/tecsidereplace.h
+  ${QET_DIR}/sources/tecside/tecsidematerials.cpp
+  ${QET_DIR}/sources/tecside/tecsidematerials.h
   ${QET_DIR}/sources/titleblockcell.cpp
   ${QET_DIR}/sources/titleblockcell.h
   ${QET_DIR}/sources/titleblockproperties.cpp

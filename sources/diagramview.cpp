@@ -3163,6 +3163,7 @@ QList<QAction *> DiagramView::contextMenuActions() const
 			list << qde->m_apply_text_format;
 			list << qde->m_paste_element_info;
 			list << qde->m_set_location;
+			list << qde->m_replace_element;
 			list << m_separators.at(0);
 			list << m_create_template; // Add the create template action
 				//Disabled, and so left out below, unless a selected element
