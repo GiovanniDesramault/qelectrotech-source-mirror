@@ -2472,3 +2472,4 @@ qet_add_app_test(tst_tecsideexport tst_tecsideexport.cpp)
 # A wire's text at both ends (text_at_ends), and master's single middle
 # text when it is off.
 qet_add_app_test(tst_textatends tst_textatends.cpp)
+qet_add_app_test(tst_elementpicturedpi tst_elementpicturedpi.cpp)

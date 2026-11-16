@@ -644,7 +644,15 @@ void Element::paint(
 	const QPicture &picture = readable ? m_readable_picture : m_picture;
 	const QPicture &low_zoom_picture = readable ? m_readable_low_zoom_picture
 												: m_low_zoom_picture;
-	if (options && options->levelOfDetailFromTransform(painter->worldTransform()) < 0.5)
+	const bool low_zoom = options
+			&& options->levelOfDetailFromTransform(painter->worldTransform()) < 0.5;
+		//drawPicture() scales by the device's resolution over the default
+		//one (72 dpi on macOS): a PDF at 96 dpi drew every symbol a third
+		//too big. Cancel it, so a symbol is the same size on any device.
+	if (QPaintDevice *device = painter->device())
+		painter->scale(qreal(picture.logicalDpiX()) / device->logicalDpiX(),
+					   qreal(picture.logicalDpiY()) / device->logicalDpiY());
+	if (low_zoom)
 	{
 		if (!low_zoom_picture.isNull())
 			painter->drawPicture(0, 0, low_zoom_picture);
