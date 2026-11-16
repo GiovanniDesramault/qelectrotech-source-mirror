@@ -13056,31 +13056,31 @@ Give them another numbering first.</source>
         <location filename="../sources/ui/configpage/projectconfigpages.cpp" line="267"/>
         <source>Conductor crossings:</source>
         <comment>label when configuring</comment>
-        <translation type="unfinished"></translation>
+        <translation>Kruisende kabels:</translation>
     </message>
     <message>
         <location filename="../sources/ui/configpage/projectconfigpages.cpp" line="269"/>
         <source>No hop</source>
         <comment>wire crossings</comment>
-        <translation type="unfinished"></translation>
+        <translation>Geen sprong</translation>
     </message>
     <message>
         <location filename="../sources/ui/configpage/projectconfigpages.cpp" line="271"/>
         <source>Hop on horizontal conductors</source>
         <comment>wire crossings</comment>
-        <translation type="unfinished"></translation>
+        <translation>Sprong op horizontale kabels</translation>
     </message>
     <message>
         <location filename="../sources/ui/configpage/projectconfigpages.cpp" line="273"/>
         <source>Hop on vertical conductors</source>
         <comment>wire crossings</comment>
-        <translation type="unfinished"></translation>
+        <translation>Sprong op verticale kabels</translation>
     </message>
     <message>
         <location filename="../sources/ui/configpage/projectconfigpages.cpp" line="275"/>
         <source>Draws a small arc where two conductors cross without being connected. Only the drawing changes: no element is added and no conductor is cut.</source>
         <comment>tooltip</comment>
-        <translation type="unfinished"></translation>
+        <translation>Tekent een boogje waar twee kabels elkaar kruisen zonder verbonden te zijn. Alleen de tekening verandert: er wordt geen element toegevoegd en geen kabel geknipt.</translation>
     </message>
     <message>
         <location filename="../sources/ui/configpage/projectconfigpages.cpp" line="280"/>
