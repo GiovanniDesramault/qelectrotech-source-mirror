@@ -22,6 +22,7 @@
 
 class Element;
 class ElementsLocation;
+class QETProject;
 class QWidget;
 
 /**
@@ -42,6 +43,17 @@ namespace TecsideReplace
 
 		/// Ask for a symbol of the collections and replace @p old by it
 	void replaceWithDialog(Element *old, QWidget *parent);
+
+		/// Bring the symbols of @p project that changed in their
+		/// collection up to date, and put a fresh copy in the place of each
+		/// one placed: new texts (label in the header, location, annotation)
+		/// come with it, the wiring and information stay. @return how many
+		/// were placed again; @p lost as for replace(). The placing again
+		/// is one undo step; updating the project's copies is not undone.
+	int refreshSymbols(QETProject *project, QStringList *lost = nullptr);
+
+		/// Ask, refresh the symbols of @p project and say how it went
+	void refreshWithDialog(QETProject *project, QWidget *parent);
 }
 
 #endif

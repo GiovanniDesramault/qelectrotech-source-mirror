@@ -27,6 +27,8 @@
 #include "qetinformation.h"
 #include "qetproject.h"
 #include "tecside/tecsidereplace.h"
+#include "qetapp.h"
+#include "qetgraphicsitem/dynamicelementtextitem.h"
 
 #include <QDomDocument>
 #include <QUndoStack>
@@ -170,6 +172,63 @@ class tst_tecsidereplace : public QObject
 			QCOMPARE(Rig::terminal(cam, "SDI OUT")->conductors().size(), 1);
 			r.project.undoStack()->redo();
 			QVERIFY(!r.diagram->elements().contains(old));
+			QCOMPARE(Rig::terminal(now, "SDI IN")->conductors().size(), 1);
+		}
+
+			//The library's version of a symbol, written in the company collection
+		static void writeCompanySymbol(const QString &name, const QString &extra)
+		{
+			const QString path = QDir(QETApp::companyElementsDir()).filePath(name + ".elmt");
+			QDir().mkpath(QFileInfo(path).path());
+			QFile file(path);
+			QVERIFY(file.open(QIODevice::WriteOnly | QIODevice::Truncate));
+			file.write(QStringLiteral(
+				"<definition type=\"element\" link_type=\"simple\" width=\"60\" "
+				"height=\"60\" hotspot_x=\"30\" hotspot_y=\"0\"><uuid uuid=\"%1\"/>"
+				"<names><name lang=\"en\">%2</name></names><description>"
+				"<line x1=\"0\" y1=\"0\" x2=\"40\" y2=\"0\"/>"
+				"<terminal x=\"0\" y=\"10\" orientation=\"w\" name=\"SDI IN\" uuid=\"{9d1c4a0e-0000-4000-8000-000000000001}\"/>"
+				"%3</description></definition>")
+					   .arg(QUuid::createUuid().toString(), name, extra).toUtf8());
+		}
+
+		void refreshPutsAFreshCopy()
+		{
+			writeCompanySymbol(QStringLiteral("refresh_conv"), QString());
+			Rig r;
+			ElementsLocation source(QStringLiteral("company://refresh_conv.elmt"));
+			QVERIFY(source.exist());
+			ElementsLocation imported = r.project.importElement(source);
+			Element *old = r.place(imported, {0, 0});
+			Element *cam = r.place(r.define("cam", {"SDI OUT"}, "Cam"), {-200, 0});
+			QVERIFY(old && cam);
+			r.wire(Rig::terminal(cam, "SDI OUT"), Rig::terminal(old, "SDI IN"), "SDI-001");
+			DiagramContext info = old->elementInformations();
+			info.addValue(QETInformation::ELMT_LABEL, "CONV1");
+			info.addValue(QStringLiteral("comment"), "10.0.0.5");
+			old->setElementInformations(info);
+				//nothing changed yet
+			QCOMPARE(TecsideReplace::refreshSymbols(&r.project), 0);
+
+				//the library gets a text for the annotation
+			writeCompanySymbol(QStringLiteral("refresh_conv"),
+				QStringLiteral("<dynamic_text x=\"0\" y=\"30\" text_from=\"ElementInfo\" "
+							   "uuid=\"{9d1c4a0e-0000-4000-8000-000000000002}\"><text></text>"
+							   "<info_name>comment</info_name></dynamic_text>"));
+			QCOMPARE(TecsideReplace::refreshSymbols(&r.project), 1);
+			QVERIFY(!r.diagram->elements().contains(old));
+			Element *now = nullptr;
+			for (Element *element : r.diagram->elements())
+				if (element != cam)
+					now = element;
+			QVERIFY(now);
+			bool shows_comment = false;
+			for (DynamicElementTextItem *text : now->dynamicTextItems())
+				shows_comment |= text->infoName() == QLatin1String("comment")
+						&& text->toPlainText() == QLatin1String("10.0.0.5");
+			QVERIFY(shows_comment);
+			QCOMPARE(now->elementInformations().value(QETInformation::ELMT_LABEL).toString(),
+					 QStringLiteral("CONV1"));
 			QCOMPARE(Rig::terminal(now, "SDI IN")->conductors().size(), 1);
 		}
 };

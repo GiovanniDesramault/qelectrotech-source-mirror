@@ -21,6 +21,8 @@
 #include "diagramcontent.h"
 #include "elementdialog.h"
 #include "factory/elementfactory.h"
+#include "factory/elementpicturefactory.h"
+#include "conductorprofile.h"
 #include "qetgraphicsitem/conductor.h"
 #include "qetgraphicsitem/element.h"
 #include "qetgraphicsitem/terminal.h"
@@ -102,6 +104,11 @@ Element *TecsideReplace::replace(Element *old, const ElementsLocation &location,
 		}
 		auto *moved = new Conductor(t1, t2);
 		moved->setProperties(c->properties());
+			//Its ends where they were (the same symbol, refreshed): the
+			//wire keeps the way it was drawn
+		if (t1->dockConductor() == c->terminal1->dockConductor()
+			&& t2->dockConductor() == c->terminal2->dockConductor())
+			moved->setProfiles(c->profiles());
 		new AddGraphicsObjectCommand(moved, diagram, QPointF(), macro);
 	}
 
@@ -127,4 +134,62 @@ void TecsideReplace::replaceWithDialog(Element *old, QWidget *parent)
 			parent, tr("Replace with"),
 			tr("The new symbol has no terminal with the name of these, "
 			   "so their wires were removed:\n%1").arg(lost.join(QLatin1Char('\n'))));
+}
+
+int TecsideReplace::refreshSymbols(QETProject *project, QStringList *lost)
+{
+	if (!project || project->isReadOnly())
+		return 0;
+	project->loadFolios();
+	QSet<QString> changed;
+	for (const QETProject::OutdatedElement &outdated : project->outdatedElements()) {
+		project->updateElement(outdated);
+		ElementPictureFactory::instance()->dropCache(outdated.embedded);
+		changed.insert(outdated.embedded.toString());
+	}
+	if (changed.isEmpty())
+		return 0;
+
+	QList<Element *> placed;
+	for (Diagram *diagram : project->folios())
+		if (diagram)
+			for (Element *element : diagram->elements())
+				if (changed.contains(element->location().toString()))
+					placed << element;
+
+	QUndoStack *stack = project->undoStack();
+	stack->beginMacro(tr("Refresh the symbols"));
+	int count = 0;
+	for (Element *element : std::as_const(placed))
+		if (replace(element, element->location(), lost))
+			++count;
+	stack->endMacro();
+		//The new wires take their type (and colour) from the sources again
+	project->scheduleDerivedPotentialTypes();
+	project->setModified(true);
+	return count;
+}
+
+void TecsideReplace::refreshWithDialog(QETProject *project, QWidget *parent)
+{
+	if (!project || project->isReadOnly())
+		return;
+	const QString title = tr("Refresh symbols from the library");
+	if (QMessageBox::question(
+			parent, title,
+			tr("Symbols that changed in the library are updated in this project, "
+			   "and each one placed is put down again: its wires, label, location "
+			   "and annotation stay, texts you moved by hand go back to their place.\n\n"
+			   "Save the project first if you want to be able to go back."))
+		!= QMessageBox::Yes)
+		return;
+	QStringList lost;
+	const int count = refreshSymbols(project, &lost);
+	QString message = count ? tr("%1 symbols placed again.").arg(count)
+							: tr("Every symbol already matches the library.");
+	if (!lost.isEmpty())
+		message += QStringLiteral("\n\n")
+				+ tr("The new symbol has no terminal with the name of these, "
+					 "so their wires were removed:\n%1").arg(lost.join(QLatin1Char('\n')));
+	QMessageBox::information(parent, title, message);
 }

@@ -1288,6 +1288,14 @@ void QETDiagramEditor::setUpActions()
 		if (ProjectView *view = currentProjectView())
 			TecsideMaterials::exportWithDialog(view->project(), this);
 	});
+	m_refresh_symbols = new QAction(tr("Refresh symbols from the library..."), this);
+	m_refresh_symbols->setData(QStringLiteral("refresh_symbols"));
+	m_refresh_symbols->setStatusTip(tr("Update the symbols that changed in the library and put each placed one down again, keeping its wires and information"));
+	ShortcutManager::instance().registerAction(m_refresh_symbols, "diagrameditor.refresh_symbols", tr("Diagram editors"), QKeySequence());
+	connect(m_refresh_symbols, &QAction::triggered, this, [this]() {
+		if (ProjectView *view = currentProjectView())
+			TecsideReplace::refreshWithDialog(view->project(), this);
+	});
 	m_draw_materials = new QAction(tr("Draw materials list"), this);
 	m_draw_materials->setData(QStringLiteral("draw_materials"));
 	m_draw_materials->setStatusTip(tr("Put the devices and cables of the project, counted per location, on a new folio"));
@@ -2365,6 +2373,7 @@ void QETDiagramEditor::setUpMenu()
 	menu_project -> addAction(m_project_wiring_list_view);
 	menu_project -> addAction(m_reload_element_drawings);
 	menu_project -> addAction(m_update_elements_from_collections);
+	menu_project -> addAction(m_refresh_symbols);
 	menu_project -> addAction(m_reset_symbol_texts);
 #ifdef QET_HAS_SCRIPTING
 	m_scripts_menu = menu_project -> addMenu(tr("Scripts"));
@@ -3987,6 +3996,7 @@ void QETDiagramEditor::slot_updateActions()
 							&& pv->project()->tecsideLocations().count());
 	m_export_materials->setEnabled(opened_project);
 	m_draw_materials->setEnabled(editable_project);
+	m_refresh_symbols->setEnabled(editable_project);
 	m_project_history             -> setEnabled(opened_project);
 	m_export_delivery             -> setEnabled(opened_project);
 	m_project_add_diagram         -> setEnabled(editable_project);

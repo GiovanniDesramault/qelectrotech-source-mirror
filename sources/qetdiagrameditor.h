@@ -292,6 +292,7 @@ class QETDiagramEditor : public QETMainWindow
 		QAction* m_draw_rack = nullptr; ///< TECside: the rack of one location, on a new folio
 		QAction* m_export_materials = nullptr; ///< TECside: devices and cables to load, to CSV
 		QAction* m_draw_materials = nullptr; ///< TECside: devices and cables to load, on a new folio
+		QAction* m_refresh_symbols = nullptr; ///< TECside: changed symbols updated and placed again, wiring kept
 
 		QAction
 		*m_tabbed_view_mode,		///< Display projects as tabs

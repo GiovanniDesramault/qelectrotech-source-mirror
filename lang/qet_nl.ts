@@ -14759,7 +14759,7 @@ Hold Ctrl while moving to place freely.</source>
         <location filename="../sources/qetdiagrameditor.cpp" line="1311"/>
         <location filename="../sources/qetdiagrameditor.cpp" line="5456"/>
         <source>Update elements from the collections</source>
-        <translation type="unfinished"></translation>
+        <translation>Elementen bijwerken vanuit de collecties</translation>
     </message>
     <message>
         <location filename="../sources/qetdiagrameditor.cpp" line="1314"/>
@@ -16949,6 +16949,16 @@ They are not shown, but they are kept in the file as they are, and join their te
         <location filename="../sources/qetdiagrameditor.cpp"/>
         <source>Draw materials list</source>
         <translation>Materiaallijst tekenen</translation>
+    </message>
+    <message>
+        <location filename="../sources/qetdiagrameditor.cpp"/>
+        <source>Refresh symbols from the library...</source>
+        <translation>Symbolen vernieuwen uit de bibliotheek...</translation>
+    </message>
+    <message>
+        <location filename="../sources/qetdiagrameditor.cpp"/>
+        <source>Update the symbols that changed in the library and put each placed one down again, keeping its wires and information</source>
+        <translation>Werk de symbolen bij die in de bibliotheek veranderden en zet elk geplaatst symbool opnieuw neer, met behoud van kabels en gegevens</translation>
     </message>
     <message>
         <location filename="../sources/qetdiagrameditor.cpp"/>
@@ -29040,6 +29050,35 @@ Door de associatie van de naam &quot;volta&quot; met de waarde &quot;1745&quot; 
 </context>
 <context>
     <name>TecsideReplace</name>
+    <message>
+        <location filename="../sources/tecside/tecsidereplace.cpp"/>
+        <source>Refresh the symbols</source>
+        <translation>Symbolen vernieuwen</translation>
+    </message>
+    <message>
+        <location filename="../sources/tecside/tecsidereplace.cpp"/>
+        <source>Refresh symbols from the library</source>
+        <translation>Symbolen vernieuwen uit de bibliotheek</translation>
+    </message>
+    <message>
+        <location filename="../sources/tecside/tecsidereplace.cpp"/>
+        <source>Symbols that changed in the library are updated in this project, and each one placed is put down again: its wires, label, location and annotation stay, texts you moved by hand go back to their place.
+
+Save the project first if you want to be able to go back.</source>
+        <translation>Symbolen die in de bibliotheek veranderden worden in dit project bijgewerkt, en elk geplaatst symbool wordt opnieuw neergezet: kabels, label, locatie en commentaar blijven, teksten die je met de hand verplaatste gaan terug naar hun plaats.
+
+Sla het project eerst op als je terug wilt kunnen.</translation>
+    </message>
+    <message>
+        <location filename="../sources/tecside/tecsidereplace.cpp"/>
+        <source>%1 symbols placed again.</source>
+        <translation>%1 symbolen opnieuw neergezet.</translation>
+    </message>
+    <message>
+        <location filename="../sources/tecside/tecsidereplace.cpp"/>
+        <source>Every symbol already matches the library.</source>
+        <translation>Alle symbolen komen al overeen met de bibliotheek.</translation>
+    </message>
     <message>
         <location filename="../sources/tecside/tecsidereplace.cpp"/>
         <source>Replace %1 by %2</source>
