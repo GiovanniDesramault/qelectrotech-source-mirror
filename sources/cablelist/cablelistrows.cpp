@@ -177,6 +177,14 @@ QStringList tecsideRow(const QString &type, const QString &number,
 const QList<CableList::Column> &CableList::allColumns()
 {
 	static const QList<Column> columns = {
+			//TECside: the number and both ends of each cable
+		{QStringLiteral("tecside_number"),    tr("Cable number")},
+		{QStringLiteral("from_device"),       tr("From device")},
+		{QStringLiteral("from_connector"),    tr("From connector")},
+		{QStringLiteral("from_location"),     tr("From location")},
+		{QStringLiteral("to_device"),         tr("To device")},
+		{QStringLiteral("to_connector"),      tr("To connector")},
+		{QStringLiteral("to_location"),       tr("To location")},
 		{QStringLiteral("nr"),                tr("No.")},
 		{QStringLiteral("installation_cable"), tr("Plant (cable)")},
 		{QStringLiteral("location_cable"),    tr("Location (cable)")},
@@ -203,13 +211,31 @@ const QList<CableList::Column> &CableList::allColumns()
 */
 const QStringList &CableList::defaultKeys()
 {
+		//The columns of before TECside: a list of a plain project is
+		//written as it always was
 	static const QStringList keys = []() {
 		QStringList list;
 		for (const Column &column : allColumns()) {
-			list << column.key;
+			if (!tecsideKeys().contains(column.key)) {
+				list << column.key;
+			}
 		}
 		return list;
 	}();
+	return keys;
+}
+
+/**
+	@brief CableList::tecsideKeys
+	@return the columns filled only in a project with TECside numbers
+*/
+const QStringList &CableList::tecsideKeys()
+{
+	static const QStringList keys{
+		QStringLiteral("tecside_number"),
+		QStringLiteral("from_device"), QStringLiteral("from_connector"),
+		QStringLiteral("from_location"), QStringLiteral("to_device"),
+		QStringLiteral("to_connector"), QStringLiteral("to_location")};
 	return keys;
 }
 
@@ -239,6 +265,27 @@ QVector<QMap<QString, QString>> CableList::rows(QETProject *project)
 {
 	QVector<QMap<QString, QString>> result;
 	if (!project) {
+		return result;
+	}
+		//A TECside project: one row per cable of the TECside list, which
+		//also fills the usual columns it has a value for
+	if (hasTecsideNumbers(project))
+	{
+		for (const QStringList &cells : tecsideRows(project))
+		{
+			QMap<QString, QString> row;
+			for (int i = 0 ; i < tecsideKeys().size() ; ++i) {
+				row.insert(tecsideKeys().at(i), cells.value(i + 1));
+			}
+			row.insert(QStringLiteral("nr"), QString::number(result.size() + 1));
+			row.insert(QStringLiteral("type"), cells.value(0).trimmed());
+			row.insert(QStringLiteral("bmk_cable"), cells.value(1));
+			row.insert(QStringLiteral("bmk_start"), cells.value(2));
+			row.insert(QStringLiteral("location_start"), cells.value(4));
+			row.insert(QStringLiteral("bmk_end"), cells.value(5));
+			row.insert(QStringLiteral("location_end"), cells.value(7));
+			result.append(row);
+		}
 		return result;
 	}
 
@@ -448,20 +495,6 @@ QVector<QMap<QString, QString>> CableList::rows(QETProject *project)
 QByteArray CableList::toCsv(QETProject *project, const QStringList &keys,
 							bool include_headers)
 {
-		//A project with TECside numbers lists its cables by type and
-		//number; every other project takes the path below, unchanged
-	if (hasTecsideNumbers(project))
-	{
-		QByteArray csv("\xEF\xBB\xBF");
-		if (include_headers) {
-			csv += BomExport::csvRecord(tecsideHeaders());
-		}
-		for (const QStringList &row : tecsideRows(project)) {
-			csv += BomExport::csvRecord(row);
-		}
-		return csv;
-	}
-
 	QStringList kept;
 	for (const QString &key : keys)
 	{
@@ -505,6 +538,17 @@ QByteArray CableList::toCsv(QETProject *project, const QStringList &keys,
 */
 QByteArray CableList::toCsv(QETProject *project)
 {
+		//A project with TECside numbers lists its cables by type and
+		//number; every other project takes the path below, unchanged
+	if (hasTecsideNumbers(project))
+	{
+		QByteArray csv("\xEF\xBB\xBF");
+		csv += BomExport::csvRecord(tecsideHeaders());
+		for (const QStringList &row : tecsideRows(project)) {
+			csv += BomExport::csvRecord(row);
+		}
+		return csv;
+	}
 	return toCsv(project, defaultKeys(), true);
 }
 

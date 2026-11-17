@@ -330,6 +330,38 @@ class tst_tecsideexport : public QObject
 			QCOMPARE(cable->designation(), QStringLiteral("W12"));
 		}
 
+		void chosenColumnsInATecsideProject()
+		{
+			Rig r(3);
+			setLabel(r.camera, QStringLiteral("CAM1"));
+			setLabel(r.switcher, QStringLiteral("SW1"));
+			r.drawAs(r.out(0), r.in(0), QStringLiteral("AUD"));
+
+				//The columns the cable list dialog offers, in the order chosen
+			const QStringList keys{QStringLiteral("tecside_number"),
+								   QStringLiteral("from_location"), QStringLiteral("to_location"),
+								   QStringLiteral("from_device"), QStringLiteral("to_device")};
+			for (const QString &key : keys)
+				QVERIFY2(!CableList::labelOf(key).isEmpty(), qPrintable(key));
+			const QStringList rows = lines(CableList::toCsv(&r.project, keys, true));
+			QCOMPARE(rows.size(), 2);
+			QCOMPARE(rows.at(0), record({
+				QStringLiteral("Cable number"), QStringLiteral("From location"),
+				QStringLiteral("To location"), QStringLiteral("From device"),
+				QStringLiteral("To device")}));
+			QCOMPARE(rows.at(1), record({
+				QStringLiteral("AUD-001-03-07"), QStringLiteral("03"), QStringLiteral("07"),
+				QStringLiteral("CAM1"), QStringLiteral("SW1")}));
+				//a table drawn with the usual columns is not empty either
+			const auto table = CableList::rows(&r.project);
+			QCOMPARE(table.size(), 1);
+			QCOMPARE(table.first().value(QStringLiteral("type")), QStringLiteral("AUD"));
+			QCOMPARE(table.first().value(QStringLiteral("bmk_start")), QStringLiteral("CAM1"));
+			QCOMPARE(table.first().value(QStringLiteral("location_end")), QStringLiteral("07"));
+				//and the TECside CSV of before is unchanged
+			QVERIFY(CableList::toCsv(&r.project).contains("\"From connector\""));
+		}
+
 		void plainProjectIsUnchanged()
 		{
 			Rig r(5);
@@ -348,15 +380,15 @@ class tst_tecsideexport : public QObject
 				//The list as it was written before TECside existed
 			QByteArray expected("\xEF\xBB\xBF");
 			QStringList headers;
-			for (const auto &column : CableList::allColumns())
-				headers << column.label;
+			for (const QString &key : CableList::defaultKeys())
+				headers << CableList::labelOf(key);
 			expected += BomExport::csvRecord(headers);
 			const auto rows = CableList::rows(&r.project);
 			QCOMPARE(rows.size(), 1);
 			for (const auto &row : rows) {
 				QStringList values;
-				for (const auto &column : CableList::allColumns())
-					values << row.value(column.key);
+				for (const QString &key : CableList::defaultKeys())
+					values << row.value(key);
 				expected += BomExport::csvRecord(values);
 			}
 			QCOMPARE(CableList::toCsv(&r.project), expected);

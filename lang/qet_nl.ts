@@ -1097,7 +1097,7 @@ Noot: Geen van deze opties bepalen het al of niet automatisch nummeren maar alle
     <message>
         <location filename="../sources/ui/bomexportdialog.ui" line="90"/>
         <source>Preview</source>
-        <translation type="unfinished">Voorbeeld</translation>
+        <translation>Voorbeeld</translation>
     </message>
     <message>
         <location filename="../sources/ui/bomexportdialog.cpp" line="78"/>
@@ -1145,7 +1145,7 @@ Noot: Geen van deze opties bepalen het al of niet automatisch nummeren maar alle
     <message>
         <location filename="../sources/ui/bomexportdialog.cpp" line="181"/>
         <source>No.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nr.</translation>
     </message>
     <message>
         <location filename="../sources/ui/bomexportdialog.cpp" line="182"/>
@@ -1843,12 +1843,12 @@ If you confirm, the other cable will lose these cores. Do you want to continue?<
     <message>
         <location filename="../sources/cablelist/cableexportdialog.cpp" line="49"/>
         <source>Export the cable list as CSV</source>
-        <translation type="unfinished"></translation>
+        <translation>Kabellijst exporteren als CSV</translation>
     </message>
     <message>
         <location filename="../sources/cablelist/cableexportdialog.cpp" line="59"/>
         <source>Layout</source>
-        <translation type="unfinished"></translation>
+        <translation>Opmaak</translation>
     </message>
     <message>
         <location filename="../sources/cablelist/cableexportdialog.cpp" line="61"/>
@@ -1858,7 +1858,7 @@ If you confirm, the other cable will lose these cores. Do you want to continue?<
     <message>
         <location filename="../sources/cablelist/cableexportdialog.cpp" line="68"/>
         <source>Preview</source>
-        <translation type="unfinished">Voorbeeld</translation>
+        <translation>Voorbeeld</translation>
     </message>
     <message>
         <location filename="../sources/cablelist/cableexportdialog.cpp" line="108"/>
@@ -1892,77 +1892,77 @@ If you confirm, the other cable will lose these cores. Do you want to continue?<
     <message>
         <location filename="../sources/cablelist/cablelistrows.cpp" line="153"/>
         <source>No.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nr.</translation>
     </message>
     <message>
         <location filename="../sources/cablelist/cablelistrows.cpp" line="154"/>
         <source>Plant (cable)</source>
-        <translation type="unfinished"></translation>
+        <translation>Installatie (kabel)</translation>
     </message>
     <message>
         <location filename="../sources/cablelist/cablelistrows.cpp" line="155"/>
         <source>Location (cable)</source>
-        <translation type="unfinished"></translation>
+        <translation>Locatie (kabel)</translation>
     </message>
     <message>
         <location filename="../sources/cablelist/cablelistrows.cpp" line="156"/>
         <source>Label (cable)</source>
-        <translation type="unfinished"></translation>
+        <translation>Label (kabel)</translation>
     </message>
     <message>
         <location filename="../sources/cablelist/cablelistrows.cpp" line="157"/>
         <source>Plant (start)</source>
-        <translation type="unfinished"></translation>
+        <translation>Installatie (begin)</translation>
     </message>
     <message>
         <location filename="../sources/cablelist/cablelistrows.cpp" line="158"/>
         <source>Location (start)</source>
-        <translation type="unfinished"></translation>
+        <translation>Locatie (begin)</translation>
     </message>
     <message>
         <location filename="../sources/cablelist/cablelistrows.cpp" line="159"/>
         <source>Label (start)</source>
-        <translation type="unfinished"></translation>
+        <translation>Label (begin)</translation>
     </message>
     <message>
         <location filename="../sources/cablelist/cablelistrows.cpp" line="160"/>
         <source>Sheet (start)</source>
-        <translation type="unfinished"></translation>
+        <translation>Blad (begin)</translation>
     </message>
     <message>
         <location filename="../sources/cablelist/cablelistrows.cpp" line="161"/>
         <source>Plant (end)</source>
-        <translation type="unfinished"></translation>
+        <translation>Installatie (einde)</translation>
     </message>
     <message>
         <location filename="../sources/cablelist/cablelistrows.cpp" line="162"/>
         <source>Location (end)</source>
-        <translation type="unfinished"></translation>
+        <translation>Locatie (einde)</translation>
     </message>
     <message>
         <location filename="../sources/cablelist/cablelistrows.cpp" line="163"/>
         <source>Label (end)</source>
-        <translation type="unfinished"></translation>
+        <translation>Label (einde)</translation>
     </message>
     <message>
         <location filename="../sources/cablelist/cablelistrows.cpp" line="164"/>
         <source>Sheet (end)</source>
-        <translation type="unfinished"></translation>
+        <translation>Blad (einde)</translation>
     </message>
     <message>
         <location filename="../sources/cablelist/cablelistrows.cpp" line="165"/>
         <source>Cable type</source>
-        <translation type="unfinished"></translation>
+        <translation>Kabeltype</translation>
     </message>
     <message>
         <location filename="../sources/cablelist/cablelistrows.cpp" line="166"/>
         <source>Length</source>
-        <translation type="unfinished"></translation>
+        <translation>Lengte</translation>
     </message>
     <message>
         <location filename="../sources/cablelist/cablelistrows.cpp" line="167"/>
         <source>Used cores</source>
-        <translation type="unfinished"></translation>
+        <translation>Gebruikte aders</translation>
     </message>
     <message>
         <location filename="../sources/cablelist/cablelistrows.cpp"/>
@@ -2003,6 +2003,11 @@ If you confirm, the other cable will lose these cores. Do you want to continue?<
         <location filename="../sources/cablelist/cablelistrows.cpp"/>
         <source>To location</source>
         <translation>Naar locatie</translation>
+    </message>
+    <message>
+        <location filename="../sources/cablelist/cablelistrows.cpp"/>
+        <source>Cable number</source>
+        <translation>Kabelnummer</translation>
     </message>
 </context>
 <context>
@@ -2327,7 +2332,7 @@ Do you want to renumber them too?</source>
     <message>
         <location filename="../sources/cable/cablepropertieswidget.cpp" line="85"/>
         <source>Length</source>
-        <translation type="unfinished"></translation>
+        <translation>Lengte</translation>
     </message>
     <message>
         <location filename="../sources/cable/cablepropertieswidget.cpp" line="90"/>
@@ -2400,7 +2405,7 @@ Do you want to renumber them too?</source>
     <message>
         <location filename="../sources/cablelist/cablequerywidget.cpp" line="50"/>
         <source>Available columns</source>
-        <translation type="unfinished"></translation>
+        <translation>Beschikbare kolommen</translation>
     </message>
     <message>
         <location filename="../sources/cablelist/cablequerywidget.cpp" line="62"/>
@@ -2425,7 +2430,7 @@ Do you want to renumber them too?</source>
     <message>
         <location filename="../sources/cablelist/cablequerywidget.cpp" line="73"/>
         <source>Table columns</source>
-        <translation type="unfinished"></translation>
+        <translation>Kolommen in de tabel</translation>
     </message>
 </context>
 <context>
@@ -9437,7 +9442,7 @@ Any setting other than “No rounding” may cause rendering errors in the proje
     <message>
         <location filename="../sources/genericdevice/genericdevicewizard.cpp" line="168"/>
         <source>Layout</source>
-        <translation type="unfinished"></translation>
+        <translation>Opmaak</translation>
     </message>
     <message>
         <location filename="../sources/genericdevice/genericdevicewizard.cpp" line="171"/>
@@ -10161,7 +10166,7 @@ Any setting other than “No rounding” may cause rendering errors in the proje
     <message>
         <location filename="../sources/ui/imagetransparentcolordialog.cpp" line="123"/>
         <source>Preview</source>
-        <translation type="unfinished">Voorbeeld</translation>
+        <translation>Voorbeeld</translation>
     </message>
     <message>
         <location filename="../sources/ui/imagetransparentcolordialog.cpp" line="261"/>
@@ -12510,7 +12515,7 @@ Its copy was kept as:
     <message>
         <location filename="../sources/ui/configpage/projectconfigpages.cpp" line="636"/>
         <source>No.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nr.</translation>
     </message>
     <message>
         <location filename="../sources/ui/configpage/projectconfigpages.cpp" line="636"/>
@@ -15809,7 +15814,7 @@ Enable scripts? This setting can be changed in Configure QElectroTech &gt; Gener
     <message>
         <location filename="../sources/qetdiagrameditor.cpp" line="6095"/>
         <source>No.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nr.</translation>
     </message>
     <message>
         <location filename="../sources/qetdiagrameditor.cpp" line="6095"/>
@@ -23518,7 +23523,7 @@ The other fields are not used.</source>
     <message>
         <location filename="../sources/ui/shapegraphicsitempropertieswidget.cpp" line="433"/>
         <source>Length</source>
-        <translation type="unfinished"></translation>
+        <translation>Lengte</translation>
     </message>
     <message>
         <location filename="../sources/ui/shapegraphicsitempropertieswidget.cpp" line="442"/>

@@ -75,6 +75,8 @@ class CableList
 			/// The columns a fresh list starts with: all of them but the
 			/// ones marked optional above
 		static const QStringList &defaultKeys();
+			/// The TECside columns: cable number and both ends
+		static const QStringList &tecsideKeys();
 			/// The header text of one column, empty when the key is not
 			/// a column of this list
 		static QString labelOf(const QString &key);
